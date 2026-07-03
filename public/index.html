@@ -21,11 +21,12 @@
 <body>
   <div class="app">
     <header class="head">
+      <button class="corner left" id="refresh" aria-label="Refresh" title="Refresh">
+        <span class="dot-sync" id="syncDot"></span>Refresh
+      </button>
       <div class="eyebrow" id="dateLabel">TODAY</div>
       <div class="rule"></div>
-      <button class="sync" id="signout" aria-label="Sign out" title="Sign out">
-        <span class="dot-sync" id="syncDot"></span>Sign out
-      </button>
+      <button class="corner right" id="signout" aria-label="Sign out" title="Sign out">Sign out</button>
     </header>
 
     <div class="board">

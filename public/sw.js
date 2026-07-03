@@ -1,5 +1,5 @@
 /* Bump CACHE when you change any shell file to push updates to installed apps. */
-const CACHE = 'today-v9';
+const CACHE = 'today-v10';
 const SHELL = [
   '/',
   '/index.html',

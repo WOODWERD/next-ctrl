@@ -127,6 +127,14 @@ ok(boxes.length === 2 && boxes[1] > boxes[0] + 200, 'iPad lays Today | Tomorrow 
 await ipad.waitForFunction(() => document.querySelectorAll('#list-tomorrow .row').length >= 1, null, { timeout: 5000 });
 ok((await rowsIn(ipad, 'tomorrow')).includes('buy milk'), 'second device shares the list after its own login');
 
+// a NEW task on the phone shows on the already-open iPad after tapping Refresh
+await phone.fill('#barInput', 'added later'); await phone.press('#barInput', 'Enter');
+await phone.waitForTimeout(1000);   // let the debounced sync flush to the server
+await ipad.click('#refresh');
+await ipad.waitForFunction(() => [...document.querySelectorAll('.txt')].some(e => e.textContent === 'added later'),
+  null, { timeout: 6000 });
+ok(true, 'Refresh pulls another device’s new task into an already-open device');
+
 await browser.close(); server.close();
 console.log(`\n${pass} passed, ${fail} failed`);
 process.exit(fail ? 1 : 0);
