@@ -23,8 +23,8 @@
     <header class="head">
       <div class="eyebrow" id="dateLabel">TODAY</div>
       <div class="rule"></div>
-      <button class="sync" id="syncBtn" aria-label="Sync across devices">
-        <span class="dot-sync" id="syncDot"></span>Sync
+      <button class="sync" id="signout" aria-label="Sign out" title="Sign out">
+        <span class="dot-sync" id="syncDot"></span>Sign out
       </button>
     </header>
 
@@ -67,28 +67,6 @@
       <input id="barInput" type="text" placeholder="Add for today…" enterkeyhint="done" autocapitalize="sentences" aria-label="Add a task" />
       <button type="submit" class="plus" aria-label="Add task">+</button>
     </form>
-  </div>
-
-  <!-- Sync sheet -->
-  <div id="sheet" class="sheet" hidden>
-    <div class="sheet-card" role="dialog" aria-modal="true" aria-label="Sync">
-      <h3>Sync across devices</h3>
-      <p class="muted">Your list lives under a private sync code. Open this app on another
-        device, tap <b>Sync</b>, and paste the same code to share one list.</p>
-      <label class="fld">
-        <span>Your sync code</span>
-        <div class="row2">
-          <input id="codeInput" type="text" spellcheck="false" autocapitalize="off" />
-          <button id="copyCode" class="btn">Copy</button>
-        </div>
-      </label>
-      <div class="sheet-actions">
-        <button id="applyCode" class="btn primary">Use this code</button>
-        <button id="newCode" class="btn">New code</button>
-        <button id="closeSheet" class="btn ghost">Close</button>
-      </div>
-      <p id="syncStatus" class="muted small"></p>
-    </div>
   </div>
 
   <script src="/app.js"></script>

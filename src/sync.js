@@ -1,11 +1,19 @@
 /**
- * Cross-device sync handler.
+ * Cross-device sync handler — identity-based (Cloudflare Access).
  *
  * POST /api/sync
- *   Body:  { code: string, items: Item[] }
+ *   Body:  { items: Item[] }
  *   Reply: { items: Item[] }   (the merged list, including tombstones)
  *
- * Storage: one JSON blob per sync code in the KV namespace bound as `TODOS`.
+ * The list is keyed to the authenticated user's email, injected by Cloudflare
+ * Access as the `Cf-Access-Authenticated-User-Email` header. Every device the
+ * user logs into therefore shares one list automatically — no sync codes.
+ *
+ * Fail-closed: with no identity (and not on localhost for `wrangler dev`),
+ * requests are rejected. Keep the worker reachable ONLY through the
+ * Access-protected hostname (disable the workers.dev route).
+ *
+ * Storage: one JSON blob per user in the KV namespace bound as `TODOS`.
  * Merge:   per-item, newest `updatedAt` wins. Deletes travel as `deleted:true`
  *          tombstones and are garbage-collected after 30 days.
  */
@@ -16,19 +24,16 @@ const MAX_ITEMS = 2000;
 const json = (obj, status = 200) =>
   new Response(JSON.stringify(obj), {
     status,
-    headers: {
-      'content-type': 'application/json',
-      'access-control-allow-origin': '*',
-      'access-control-allow-methods': 'POST, OPTIONS',
-      'access-control-allow-headers': 'content-type',
-      'cache-control': 'no-store',
-    },
+    headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
   });
 
-function cleanCode(raw) {
-  if (typeof raw !== 'string') return null;
-  const c = raw.trim().toUpperCase().slice(0, 64);
-  return /^[A-Z0-9-]{6,64}$/.test(c) ? c : null;
+/** Storage key for the caller, or null if unauthenticated. */
+function userKeyFrom(request) {
+  const email = request.headers.get('Cf-Access-Authenticated-User-Email');
+  if (email && email.includes('@')) return 'user:' + email.trim().toLowerCase();
+  const host = new URL(request.url).hostname;             // allow local `wrangler dev`
+  if (host === 'localhost' || host === '127.0.0.1') return 'dev:local';
+  return null;
 }
 
 function sanitizeItem(x) {
@@ -56,22 +61,21 @@ function mergeById(a, b) {
 }
 
 export async function handleSync(request, env) {
-  if (request.method === 'OPTIONS') return json({}, 204);
   if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405);
 
   if (!env || !env.TODOS) {
     return json({ error: 'KV namespace TODOS is not bound. See README.' }, 500);
   }
 
+  const who = userKeyFrom(request);
+  if (!who) return json({ error: 'unauthenticated' }, 401);
+
   let body;
   try { body = await request.json(); }
   catch { return json({ error: 'invalid json' }, 400); }
 
-  const code = cleanCode(body && body.code);
-  if (!code) return json({ error: 'invalid sync code' }, 400);
-
   const incoming = Array.isArray(body.items) ? body.items : [];
-  const key = 'list:' + code;
+  const key = 'list:' + who;
 
   const storedRaw = await env.TODOS.get(key);
   const stored = storedRaw ? (JSON.parse(storedRaw).items || []) : [];
