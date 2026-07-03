@@ -80,15 +80,7 @@ await phone.waitForFunction(() => document.getElementById('login').hidden, null,
 ok(true, 'correct password unlocks the app');
 
 ok(await phone.isVisible('#addbar'), 'phone shows the bottom add bar');
-
-// mic dictation: record (fake audio) -> transcribe (mocked) -> fills the add box
 ok(await phone.isVisible('#addbar .mic'), 'mic button shows when recording is supported');
-await phone.click('#addbar .mic');
-await phone.waitForTimeout(500);
-await phone.click('#addbar .mic');
-await phone.waitForFunction(() => document.getElementById('barInput').value.includes('mic test'), null, { timeout: 6000 });
-ok(true, 'mic dictation transcribes into the add box');
-await phone.fill('#barInput', '');
 
 await phone.fill('#barInput', 'buy milk'); await phone.press('#barInput', 'Enter');
 await phone.waitForSelector('#list-today .row');
@@ -115,6 +107,14 @@ await phone.reload();
 await phone.waitForFunction(() => document.getElementById('login').hidden, null, { timeout: 5000 });
 await phone.waitForSelector('#list-tomorrow .row');
 ok((await rowsIn(phone, 'tomorrow')).includes('buy milk'), 'session persists across reload (no re-login)');
+
+// mic: record (fake audio) -> transcribe (mocked) -> AUTO-ADDS to the day's list
+await phone.click('#addbar .mic');
+await phone.waitForTimeout(500);
+await phone.click('#addbar .mic');   // fake device is never silent, so stop manually
+await phone.waitForFunction(() => [...document.querySelectorAll('#list-today .txt')].some(e => e.textContent === 'mic test'),
+  null, { timeout: 6000 });
+ok(true, 'mic dictation auto-adds the spoken task');
 
 /* ══ iPad (4a) — separate device logs in, shares the same list ══ */
 const ipad = await (await browser.newContext({ viewport: { width: 1080, height: 810 } })).newPage();

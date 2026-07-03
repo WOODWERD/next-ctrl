@@ -220,11 +220,45 @@ $('#chip').addEventListener('click', () => {
   $('#barInput').placeholder = chipDay === 'today' ? 'Add for today…' : 'Add for tomorrow…';
 });
 
-/* ---------- voice capture (mic -> Whisper -> add box) ---------- */
-function setupMic(btn, input) {
-  let rec = null, chunks = [], stream = null, recording = false, timer = null;
+/* ---------- voice capture (mic -> Whisper -> add task) ----------
+   Tap to start, then it stops on its own ~1.2s after you finish talking
+   (or tap again). The transcript is added straight to the right day's list. */
+const SPEAK_LEVEL = 12, SILENCE_LEVEL = 7, SILENCE_MS = 1200, MIN_MS = 400, MAX_MS = 20000;
 
-  const stop = () => { clearTimeout(timer); if (rec && rec.state !== 'inactive') rec.stop(); };
+function setupMic(btn, input) {
+  const form = btn.closest('form');
+  let rec = null, chunks = [], stream = null, recording = false;
+  let timer = null, audioCtx = null, raf = null;
+
+  const stopMonitor = () => { if (raf) cancelAnimationFrame(raf); raf = null;
+    if (audioCtx) { try { audioCtx.close(); } catch {} audioCtx = null; } };
+  const stop = () => { clearTimeout(timer); stopMonitor(); if (rec && rec.state !== 'inactive') rec.stop(); };
+
+  // watch loudness; auto-stop once the user has spoken and then falls quiet
+  function watchSilence() {
+    let src, analyser;
+    try {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      src = audioCtx.createMediaStreamSource(stream);
+      analyser = audioCtx.createAnalyser(); analyser.fftSize = 1024;
+      src.connect(analyser);
+    } catch { return; }
+    const buf = new Uint8Array(analyser.fftSize);
+    const started = Date.now();
+    let spoke = false, quietSince = 0;
+    const tick = () => {
+      analyser.getByteTimeDomainData(buf);
+      let sum = 0; for (let i = 0; i < buf.length; i++) sum += Math.abs(buf[i] - 128);
+      const level = sum / buf.length, now = Date.now();
+      if (level > SPEAK_LEVEL) { spoke = true; quietSince = 0; }
+      else if (spoke && now - started > MIN_MS) {
+        if (!quietSince) quietSince = now;
+        else if (now - quietSince > SILENCE_MS) { stop(); return; }
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+  }
 
   btn.addEventListener('click', async () => {
     if (recording) { stop(); return; }
@@ -247,16 +281,17 @@ function setupMic(btn, input) {
         });
         if (res.ok) {
           const { text } = await res.json();
-          if (text) input.value = input.value ? input.value.trim() + ' ' + text : text;
+          const day = form.id === 'addbar' ? chipDay : form.dataset.day;
+          if (text) addItem(text, day);          // auto-add to the right day
         }
       } catch {}
       btn.classList.remove('busy');
-      input.focus();
     };
     rec.start();
     recording = true;
     btn.classList.add('rec');
-    timer = setTimeout(stop, 20000);          // safety cap
+    watchSilence();
+    timer = setTimeout(stop, MAX_MS);            // safety cap
   });
 }
 
