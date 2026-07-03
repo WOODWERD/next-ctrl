@@ -1,8 +1,7 @@
 'use strict';
 
-/* ---------- storage keys ---------- */
+/* ---------- storage ---------- */
 const K_ITEMS = 'today.items.v1';
-const K_CODE  = 'today.code.v1';
 
 /* ---------- helpers ---------- */
 const $  = (s, r = document) => r.querySelector(s);
@@ -22,18 +21,9 @@ function uid() {
   if (crypto.randomUUID) return crypto.randomUUID();
   return 'x' + now().toString(36) + Math.floor(Math.random() * 1e9).toString(36);
 }
-function randomCode() {
-  const abc = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
-  const buf = crypto.getRandomValues(new Uint8Array(16));
-  let out = '';
-  for (let i = 0; i < 16; i++) { out += abc[buf[i] % abc.length]; if (i % 4 === 3 && i < 15) out += '-'; }
-  return out;
-}
 
 /* ---------- state ---------- */
 let items = load(K_ITEMS, []);
-let code  = localStorage.getItem(K_CODE);
-if (!code) { code = randomCode(); localStorage.setItem(K_CODE, code); }
 let chipDay = 'today';           // phone add-bar target
 const fresh = new Set();          // ids to animate in on next render
 
@@ -44,8 +34,7 @@ function saveItems() { localStorage.setItem(K_ITEMS, JSON.stringify(items)); }
 
 /* ---------- model ops (local-first) ----------
    Internal item: { id, text, due 'YYYY-MM-DD', done, deleted, updatedAt }
-   Bucket is derived from `due` vs today, which gives free midnight rollover:
-   a Tomorrow task (due = tomorrow) simply becomes Today when the date flips. */
+   Bucket is derived from `due` vs today, which gives free midnight rollover. */
 function bucketOf(it) { return it.due <= todayStr() ? 'today' : 'tomorrow'; }
 
 function addItem(text, day) {
@@ -61,7 +50,7 @@ function completeItem(id) {           // swipe right: finish (not kept)
   const it = items.find(i => i.id === id);
   if (!it) return;
   it.done = true; it.deleted = true; it.updatedAt = now();
-  saveItems(); queueSync();           // render handled by the slide-out animation
+  saveItems(); queueSync();
 }
 function moveItem(id) {                // swipe left: flip to the other day
   const it = items.find(i => i.id === id);
@@ -140,7 +129,7 @@ function attachSwipe(fg, under, li, id) {
       completeItem(id);
       setTimeout(() => { li.remove(); render(); }, 380);
     } else if (dx < -THRESHOLD) {               // move to other day
-      moveItem(id);                             // re-render places it in the other bucket
+      moveItem(id);
     } else {                                    // spring back
       fg.style.transform = 'translateX(0)';
     }
@@ -149,7 +138,7 @@ function attachSwipe(fg, under, li, id) {
   fg.addEventListener('pointercancel', end);
 }
 
-/* ---------- sync (per-item merge, newest-write-wins) ---------- */
+/* ---------- sync (identity-based; the server keys by your Access email) ---------- */
 let syncTimer = null, syncing = false;
 function setDot(state) { $('#syncDot').className = 'dot-sync' + (state ? ' ' + state : ''); }
 function queueSync() { clearTimeout(syncTimer); syncTimer = setTimeout(sync, 600); }
@@ -169,14 +158,14 @@ async function sync() {
   try {
     const res = await fetch('/api/sync', {
       method: 'POST', headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ code, items }),
+      body: JSON.stringify({ items }),
     });
     if (!res.ok) throw new Error('sync ' + res.status);
     const data = await res.json();
     if (Array.isArray(data.items)) { mergeInto(data.items); render(); }
-    setDot('ok'); $('#syncStatus').textContent = 'Synced just now.';
+    setDot('ok');
   } catch {
-    setDot('err'); $('#syncStatus').textContent = 'Offline — saved on this device, will sync later.';
+    setDot('err');
   } finally { syncing = false; }
 }
 
@@ -187,14 +176,12 @@ function setDate() {
 }
 
 /* ---------- capture wiring ---------- */
-// per-column add lines (iPad)
 $$('.col-add').forEach(form => form.addEventListener('submit', e => {
   e.preventDefault();
   const input = $('input', form);
   addItem(input.value, form.dataset.day);
   input.value = ''; input.focus();
 }));
-// phone add bar
 $('#addbar').addEventListener('submit', e => {
   e.preventDefault();
   const input = $('#barInput');
@@ -209,27 +196,9 @@ $('#chip').addEventListener('click', () => {
   $('#barInput').placeholder = chipDay === 'today' ? 'Add for today…' : 'Add for tomorrow…';
 });
 
-/* ---------- sync sheet ---------- */
-const sheet = $('#sheet');
-$('#syncBtn').addEventListener('click', () => {
-  $('#codeInput').value = code; $('#syncStatus').textContent = ''; sheet.hidden = false;
-});
-$('#closeSheet').addEventListener('click', () => sheet.hidden = true);
-sheet.addEventListener('click', e => { if (e.target === sheet) sheet.hidden = true; });
-$('#copyCode').addEventListener('click', async () => {
-  try { await navigator.clipboard.writeText(code); $('#syncStatus').textContent = 'Code copied.'; }
-  catch { $('#codeInput').select(); }
-});
-$('#applyCode').addEventListener('click', () => {
-  const v = $('#codeInput').value.trim().toUpperCase();
-  if (!v) return;
-  code = v; localStorage.setItem(K_CODE, code);
-  $('#syncStatus').textContent = 'Pulling that list…'; sync();
-});
-$('#newCode').addEventListener('click', () => {
-  code = randomCode(); localStorage.setItem(K_CODE, code);
-  $('#codeInput').value = code;
-  $('#syncStatus').textContent = 'New code created. Paste it on your other devices to pair.'; sync();
+/* Sign out of Cloudflare Access */
+$('#signout').addEventListener('click', () => {
+  window.location.href = '/cdn-cgi/access/logout';
 });
 
 /* ---------- lifecycle ---------- */

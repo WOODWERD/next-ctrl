@@ -16,7 +16,7 @@ const MIME = { '.html':'text/html','.css':'text/css','.js':'text/javascript','.j
 const server = http.createServer(async (req, res) => {
   if (req.url === '/api/sync' && req.method === 'POST') {
     const chunks = []; for await (const c of req) chunks.push(c);
-    const r = await handleSync(new Request('http://x/api/sync', { method:'POST',
+    const r = await handleSync(new Request('http://127.0.0.1/api/sync', { method:'POST',
       headers:{'content-type':'application/json'}, body: Buffer.concat(chunks) }), env);
     res.writeHead(r.status, { 'content-type':'application/json' }); res.end(await r.text()); return;
   }
@@ -85,9 +85,8 @@ ok(true, 'sync dot turns green');
 await phone.reload();
 await phone.waitForSelector('#list-tomorrow .row');
 ok((await rowsIn(phone, 'tomorrow')).includes('buy milk'), 'tasks persist across reload');
-const code = await phone.evaluate(() => localStorage.getItem('today.code.v1'));
 
-/* ══ iPad (4a) ══ */
+/* ══ iPad (4a) — same identity, so it shares the list automatically (no codes) ══ */
 const ipad = await (await browser.newContext({ viewport: { width: 1080, height: 810 } })).newPage();
 await ipad.goto(base);
 ok(await ipad.isVisible('.col-add'), 'iPad shows per-column add lines');
@@ -96,13 +95,9 @@ ok(!(await ipad.isVisible('#addbar')), 'iPad hides the phone add bar');
 const boxes = await ipad.$$eval('.col', els => els.map(e => e.getBoundingClientRect().x));
 ok(boxes.length === 2 && boxes[1] > boxes[0] + 200, 'iPad lays Today | Tomorrow side by side');
 
-// pair with the phone's list
-await ipad.click('#syncBtn');
-await ipad.fill('#codeInput', code);
-await ipad.click('#applyCode');
-await ipad.click('#closeSheet');
+// no pairing step — a second device just pulls the shared list on load
 await ipad.waitForFunction(() => document.querySelectorAll('#list-tomorrow .row').length >= 1, null, { timeout: 5000 });
-ok((await rowsIn(ipad, 'tomorrow')).includes('buy milk'), 'second device pulls the shared list by code');
+ok((await rowsIn(ipad, 'tomorrow')).includes('buy milk'), 'second device auto-shares the list (identity-keyed, no code)');
 
 // add via the Today column add line
 await ipad.fill('.col-add[data-day="today"] input', 'water plants');
