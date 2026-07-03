@@ -309,10 +309,22 @@ $('#signout').addEventListener('click', async () => {
   showLogin('Signed out');
 });
 
-/* ---------- lifecycle ---------- */
+/* Manual refresh (tap the dot/label to force a pull) */
+$('#refresh').addEventListener('click', async () => {
+  const d = $('#syncDot');
+  d.classList.add('spin');
+  await sync();
+  d.classList.remove('spin');
+});
+
+/* ---------- keep devices fresh ---------- */
+// Re-sync whenever the app comes back to the foreground, and every 15s while open,
+// so hopping between devices shows the latest list without a hard reload.
 document.addEventListener('visibilitychange', () => { if (!document.hidden) { setDate(); render(); sync(); } });
+window.addEventListener('focus', () => { setDate(); render(); sync(); });
+window.addEventListener('pageshow', sync);      // bfcache / returning to an open tab
 window.addEventListener('online', sync);
-window.addEventListener('focus', () => { setDate(); render(); });
+setInterval(() => { if (!document.hidden && navigator.onLine) sync(); }, 15000);
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));

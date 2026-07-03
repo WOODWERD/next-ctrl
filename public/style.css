@@ -52,16 +52,20 @@ body {
   letter-spacing:0.18em; text-transform:uppercase; color:var(--ink-500);
 }
 .rule { width:36px; height:2px; background:var(--accent); }
-.sync {
-  position:absolute; top:calc(var(--safe-t) + 14px); right:16px;
+.corner {
+  position:absolute; top:calc(var(--safe-t) + 14px);
   display:flex; align-items:center; gap:6px;
   background:none; border:0; cursor:pointer;
   font-family:var(--font-ui); font-weight:400; font-size:11px; letter-spacing:0.04em;
   color:var(--ink-400); padding:6px;
 }
+.corner.left { left:16px; }
+.corner.right { right:16px; }
 .dot-sync { width:7px; height:7px; border-radius:9999px; background:var(--ink-300); transition:background .2s; }
 .dot-sync.ok { background:var(--accent); }
 .dot-sync.err { background:#B83232; }
+.dot-sync.spin { animation:dotpulse .7s var(--ease) infinite; }
+@keyframes dotpulse { 0%,100% { transform:scale(1); opacity:1; } 50% { transform:scale(1.9); opacity:.5; } }
 
 /* ── Board: phone stacks the two columns; iPad puts them side by side ── */
 .board { flex:1; min-height:0; overflow:auto; display:flex; flex-direction:column; }
