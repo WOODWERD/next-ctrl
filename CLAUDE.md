@@ -9,8 +9,12 @@ done. Installable PWA, works offline, syncs one list across the owner's devices.
 
 - Deployed as a **Cloudflare Worker** named `today` that serves the static app *and* the API.
 - **Static assets:** everything in `public/`, served automatically via the `[assets]` binding.
-- **API:** `POST /api/sync` handled by the Worker (`src/index.js` → `src/sync.js`).
+- **API:** `POST /api/sync` (list), `/api/transcribe` (voice), `/api/login`, `/api/logout` —
+  all in the Worker (`src/index.js`).
 - **Storage:** Workers **KV** namespace bound as `TODOS` (id in `wrangler.toml`).
+- **Voice capture:** a mic button records audio → `POST /api/transcribe` → Whisper on
+  **Workers AI** (`[ai]` binding `AI`, model `@cf/openai/whisper`) → text into the add box.
+  Session-gated. Client uses `MediaRecorder`; buttons hide where it's unsupported.
 - **Auth/privacy:** **built-in login** (`src/auth.js`). Single-user password stored as the
   Worker secret `APP_PASSWORD` (`wrangler secret put APP_PASSWORD`, or the dashboard). A
   successful `POST /api/login` sets a signed first-party `sid` cookie (HMAC key derived from
@@ -28,11 +32,13 @@ public/index.html          one DOM drives both layouts (phone + iPad)
 public/style.css           WOODWERD design tokens + responsive styling
 public/app.js              local-first state, swipe gestures, sync (POST { items })
 public/sw.js               service worker (offline shell + fonts); bump CACHE on shell changes
-public/pwa/                install assets (manifest + icons); public via one Access Bypass rule (today.woodwerd.com path pwa/*)
+public/pwa/                install assets (manifest + icons)
 public/fonts/              WOODWERD fonts
-src/index.js               Worker entry: routes /api/sync, else serves assets
-src/sync.js                sync handler: identity key + per-item merge in KV
-wrangler.toml              Worker config: main, [assets] dir, KV binding (TODOS)
+src/index.js               Worker entry: routes /api/{sync,transcribe,login,logout}, else serves assets
+src/sync.js                sync handler: session-gated, single key (list:owner), per-item merge
+src/auth.js                password login: signed sid cookie, verifySession()
+src/transcribe.js          voice capture: Whisper on Workers AI (POST audio -> { text })
+wrangler.toml              Worker config: main, [assets] dir, KV (TODOS), AI binding
 scripts/make_icons.py      dependency-free PNG icon generator (npm run icons)
 scripts/test_sync.mjs      unit tests for the sync/merge handler
 scripts/test_e2e.mjs       headless-browser end-to-end test (uses playwright-core)
