@@ -13,8 +13,10 @@ done. Installable PWA, works offline, syncs one list across the owner's devices.
   all in the Worker (`src/index.js`).
 - **Storage:** Workers **KV** namespace bound as `TODOS` (id in `wrangler.toml`).
 - **Voice capture:** a mic button records audio → `POST /api/transcribe` → Whisper on
-  **Workers AI** (`[ai]` binding `AI`, model `@cf/openai/whisper`) → text into the add box.
-  Session-gated. Client uses `MediaRecorder`; buttons hide where it's unsupported.
+  **Workers AI** (`[ai]` binding `AI`, model `@cf/openai/whisper`) → the transcript is
+  auto-added to the day's list. Recording auto-stops ~1.2s after you stop talking (Web Audio
+  loudness watch) or on a second tap. Session-gated. Client uses `MediaRecorder`; buttons
+  hide where it's unsupported.
 - **Auth/privacy:** **built-in login** (`src/auth.js`). Single-user password stored as the
   Worker secret `APP_PASSWORD` (`wrangler secret put APP_PASSWORD`, or the dashboard). A
   successful `POST /api/login` sets a signed first-party `sid` cookie (HMAC key derived from
