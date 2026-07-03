@@ -1,14 +1,14 @@
 /* Bump CACHE when you change any shell file to push updates to installed apps. */
-const CACHE = 'today-v5';
+const CACHE = 'today-v6';
 const SHELL = [
   '/',
   '/index.html',
   '/style.css',
   '/app.js',
-  '/manifest.webmanifest',
-  '/icon-192.png',
-  '/icon-512.png',
-  '/apple-touch-icon.png',
+  '/pwa/manifest.webmanifest',
+  '/pwa/icon-192.png',
+  '/pwa/icon-512.png',
+  '/pwa/apple-touch-icon.png',
   '/fonts/Gotham-Book.otf',
   '/fonts/Gotham-Bold.otf',
   '/fonts/CargoD.otf',

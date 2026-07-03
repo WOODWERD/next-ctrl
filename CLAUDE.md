@@ -25,7 +25,8 @@ public/index.html          one DOM drives both layouts (phone + iPad)
 public/style.css           WOODWERD design tokens + responsive styling
 public/app.js              local-first state, swipe gestures, sync (POST { items })
 public/sw.js               service worker (offline shell + fonts); bump CACHE on shell changes
-public/manifest.webmanifest, public/icon-*.png, public/fonts/
+public/pwa/                install assets (manifest + icons); public via one Access Bypass rule (today.woodwerd.com path pwa/*)
+public/fonts/              WOODWERD fonts
 src/index.js               Worker entry: routes /api/sync, else serves assets
 src/sync.js                sync handler: identity key + per-item merge in KV
 wrangler.toml              Worker config: main, [assets] dir, KV binding (TODOS)

@@ -2,7 +2,7 @@
 """Generate PNG app icons (indigo rounded tile + white check) with no dependencies."""
 import struct, zlib, math, os
 
-OUT = os.path.join(os.path.dirname(__file__), "..", "public")
+OUT = os.path.join(os.path.dirname(__file__), "..", "public", "pwa")
 BG = (12, 11, 9)        # WOODWERD ink-900 #0C0B09
 FG = (196, 148, 74)     # WOODWERD amber #C4944A
 SS = 3                   # supersample factor for smooth edges
