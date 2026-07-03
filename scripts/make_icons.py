@@ -3,8 +3,8 @@
 import struct, zlib, math, os
 
 OUT = os.path.join(os.path.dirname(__file__), "..", "public")
-BG = (79, 70, 229)      # indigo #4F46E5
-FG = (255, 255, 255)
+BG = (12, 11, 9)        # WOODWERD ink-900 #0C0B09
+FG = (196, 148, 74)     # WOODWERD amber #C4944A
 SS = 3                   # supersample factor for smooth edges
 
 def dist_seg(px, py, ax, ay, bx, by):

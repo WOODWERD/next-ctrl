@@ -1,5 +1,5 @@
 /* Bump CACHE when you change any shell file to push updates to installed apps. */
-const CACHE = 'today-v1';
+const CACHE = 'today-v2';
 const SHELL = [
   '/',
   '/index.html',
@@ -9,6 +9,12 @@ const SHELL = [
   '/icon-192.png',
   '/icon-512.png',
   '/apple-touch-icon.png',
+  '/fonts/Gotham-Book.otf',
+  '/fonts/Gotham-Bold.otf',
+  '/fonts/CargoD.otf',
+  '/fonts/Roboto-Light.ttf',
+  '/fonts/Roboto-Regular.ttf',
+  '/fonts/Roboto-Medium.ttf',
 ];
 
 self.addEventListener('install', e => {

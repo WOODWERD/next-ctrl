@@ -4,19 +4,18 @@
 const K_ITEMS = 'today.items.v1';
 const K_CODE  = 'today.code.v1';
 
-/* ---------- tiny helpers ---------- */
+/* ---------- helpers ---------- */
 const $  = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const now = () => Date.now();
 
 function ymd(d) {
-  // local YYYY-MM-DD
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
 }
-function todayStr() { return ymd(new Date()); }
+const todayStr = () => ymd(new Date());
 function tomorrowStr() { const d = new Date(); d.setDate(d.getDate() + 1); return ymd(d); }
 
 function uid() {
@@ -24,14 +23,10 @@ function uid() {
   return 'x' + now().toString(36) + Math.floor(Math.random() * 1e9).toString(36);
 }
 function randomCode() {
-  // human-friendly, hard to guess: 4 groups of 4 (no ambiguous chars)
   const abc = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
   const buf = crypto.getRandomValues(new Uint8Array(16));
   let out = '';
-  for (let i = 0; i < 16; i++) {
-    out += abc[buf[i] % abc.length];
-    if (i % 4 === 3 && i < 15) out += '-';
-  }
+  for (let i = 0; i < 16; i++) { out += abc[buf[i] % abc.length]; if (i % 4 === 3 && i < 15) out += '-'; }
   return out;
 }
 
@@ -39,110 +34,127 @@ function randomCode() {
 let items = load(K_ITEMS, []);
 let code  = localStorage.getItem(K_CODE);
 if (!code) { code = randomCode(); localStorage.setItem(K_CODE, code); }
-let pickedWhen = 'today';
+let chipDay = 'today';           // phone add-bar target
+const fresh = new Set();          // ids to animate in on next render
 
 function load(key, fallback) {
-  try { return JSON.parse(localStorage.getItem(key)) ?? fallback; }
-  catch { return fallback; }
+  try { return JSON.parse(localStorage.getItem(key)) ?? fallback; } catch { return fallback; }
 }
 function saveItems() { localStorage.setItem(K_ITEMS, JSON.stringify(items)); }
 
-/* ---------- item ops (local-first) ---------- */
-function addItem(text, when) {
+/* ---------- model ops (local-first) ----------
+   Internal item: { id, text, due 'YYYY-MM-DD', done, deleted, updatedAt }
+   Bucket is derived from `due` vs today, which gives free midnight rollover:
+   a Tomorrow task (due = tomorrow) simply becomes Today when the date flips. */
+function bucketOf(it) { return it.due <= todayStr() ? 'today' : 'tomorrow'; }
+
+function addItem(text, day) {
   const t = text.trim();
   if (!t) return;
-  items.push({
-    id: uid(),
-    text: t,
-    due: when === 'tomorrow' ? tomorrowStr() : todayStr(),
-    done: false,
-    deleted: false,
-    updatedAt: now(),
-  });
+  const id = uid();
+  items.push({ id, text: t, due: day === 'tomorrow' ? tomorrowStr() : todayStr(),
+               done: false, deleted: false, updatedAt: now() });
+  fresh.add(id);
   saveItems(); render(); queueSync();
 }
-function patch(id, fields) {
+function completeItem(id) {           // swipe right: finish (not kept)
   const it = items.find(i => i.id === id);
   if (!it) return;
-  Object.assign(it, fields, { updatedAt: now() });
-  saveItems(); render(); queueSync();
+  it.done = true; it.deleted = true; it.updatedAt = now();
+  saveItems(); queueSync();           // render handled by the slide-out animation
 }
-const toggleDone = id => { const it = items.find(i => i.id === id); if (it) patch(id, { done: !it.done }); };
-const removeItem = id => patch(id, { deleted: true });
-function clearDone() {
-  const stamp = now();
-  items.forEach(i => { if (i.done && !i.deleted) { i.deleted = true; i.updatedAt = stamp; } });
+function moveItem(id) {                // swipe left: flip to the other day
+  const it = items.find(i => i.id === id);
+  if (!it) return;
+  it.due = bucketOf(it) === 'today' ? tomorrowStr() : todayStr();
+  it.updatedAt = now();
   saveItems(); render(); queueSync();
 }
 
 /* ---------- rendering ---------- */
-function bucketOf(it) {
-  // overdue or scheduled for today -> Today; anything later -> Tomorrow
-  return it.due <= todayStr() ? 'today' : 'tomorrow';
-}
-
 function render() {
   const buckets = { today: [], tomorrow: [] };
-  for (const it of items) {
-    if (it.deleted) continue;
-    buckets[bucketOf(it)].push(it);
-  }
-  let anyDone = false;
+  for (const it of items) { if (!it.deleted) buckets[bucketOf(it)].push(it); }
 
-  for (const name of ['today', 'tomorrow']) {
-    const list = buckets[name];
-    // active first, completed sink to the bottom; stable-ish by updatedAt
-    list.sort((a, b) => (a.done - b.done) || (a.updatedAt - b.updatedAt));
-    const ul = $('#list-' + name);
+  for (const day of ['today', 'tomorrow']) {
+    const list = buckets[day];
+    list.sort((a, b) => a.updatedAt - b.updatedAt);
+    const ul = $('#list-' + day);
     ul.innerHTML = '';
-    for (const it of list) {
-      if (it.done) anyDone = true;
-      ul.appendChild(renderItem(it));
-    }
-    $(`[data-empty="${name}"]`).style.display = list.length ? 'none' : '';
+    for (const it of list) ul.appendChild(renderRow(it, day));
+    const n = list.length;
+    $('#count-' + day).textContent = n === 1 ? '1 task' : n + ' tasks';
+    $('#empty-' + day).style.display = n ? 'none' : '';
   }
-  $('#clearDone').hidden = !anyDone;
+  fresh.clear();
 }
 
-function renderItem(it) {
+function renderRow(it, day) {
   const li = document.createElement('li');
-  li.className = 'item' + (it.done ? ' done' : '');
+  li.className = 'row' + (fresh.has(it.id) ? ' entering' : '');
 
-  const check = document.createElement('button');
-  check.className = 'check';
-  check.setAttribute('aria-label', it.done ? 'Mark not done' : 'Mark done');
-  check.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l5 5L20 6"/></svg>';
-  check.onclick = () => toggleDone(it.id);
+  const under = document.createElement('div');
+  under.className = 'under';
+  const done = document.createElement('span');
+  done.className = 'under-done'; done.textContent = 'DONE ✓';
+  const move = document.createElement('span');
+  move.className = 'under-move';
+  move.textContent = day === 'today' ? '→ TOMORROW' : '→ TODAY';
+  under.append(done, move);
 
-  const txt = document.createElement('span');
-  txt.className = 'txt';
-  txt.textContent = it.text;
+  const fg = document.createElement('div');
+  fg.className = 'fg';
+  const dot = document.createElement('span'); dot.className = 'dot';
+  const txt = document.createElement('span'); txt.className = 'txt'; txt.textContent = it.text;
+  fg.append(dot, txt);
 
-  const del = document.createElement('button');
-  del.className = 'del';
-  del.setAttribute('aria-label', 'Delete');
-  del.textContent = '×';
-  del.onclick = () => removeItem(it.id);
-
-  li.append(check, txt, del);
+  li.append(under, fg);
+  attachSwipe(fg, under, li, it.id);
   return li;
 }
 
-/* ---------- sync (per-item merge, last-write-wins) ---------- */
-let syncTimer = null;
-let syncing = false;
+/* ---------- swipe (pointer events) ---------- */
+const CLAMP = 110, THRESHOLD = 64;
+const DONE_BG = '#C4944A', MOVE_BG = '#46433D';   // amber = finish, dark = move
+function attachSwipe(fg, under, li, id) {
+  let startX = 0, dx = 0, dragging = false;
 
-function setDot(state) {
-  const d = $('#syncDot');
-  d.className = 'dot' + (state === 'ok' ? ' on' : state === 'err' ? ' err' : '');
+  fg.addEventListener('pointerdown', e => {
+    dragging = true; startX = e.clientX; dx = 0;
+    fg.classList.add('dragging');
+    try { fg.setPointerCapture(e.pointerId); } catch {}
+  });
+  fg.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    dx = Math.max(-CLAMP, Math.min(CLAMP, e.clientX - startX));
+    fg.style.transform = `translateX(${dx}px)`;
+    under.style.backgroundColor = dx >= 0 ? DONE_BG : MOVE_BG;
+  });
+  const end = () => {
+    if (!dragging) return;
+    dragging = false;
+    fg.classList.remove('dragging');
+    if (dx > THRESHOLD) {                       // finish → slide off, then remove
+      fg.style.transform = 'translateX(440px)';
+      fg.style.opacity = '0';
+      completeItem(id);
+      setTimeout(() => { li.remove(); render(); }, 380);
+    } else if (dx < -THRESHOLD) {               // move to other day
+      moveItem(id);                             // re-render places it in the other bucket
+    } else {                                    // spring back
+      fg.style.transform = 'translateX(0)';
+    }
+  };
+  fg.addEventListener('pointerup', end);
+  fg.addEventListener('pointercancel', end);
 }
-function queueSync() {
-  clearTimeout(syncTimer);
-  syncTimer = setTimeout(sync, 600);
-}
+
+/* ---------- sync (per-item merge, newest-write-wins) ---------- */
+let syncTimer = null, syncing = false;
+function setDot(state) { $('#syncDot').className = 'dot-sync' + (state ? ' ' + state : ''); }
+function queueSync() { clearTimeout(syncTimer); syncTimer = setTimeout(sync, 600); }
 
 function mergeInto(incoming) {
-  // merge server items into local by id, newest updatedAt wins
   const byId = new Map(items.map(i => [i.id, i]));
   for (const s of incoming) {
     const cur = byId.get(s.id);
@@ -151,57 +163,59 @@ function mergeInto(incoming) {
   items = [...byId.values()];
   saveItems();
 }
-
 async function sync() {
   if (syncing || !navigator.onLine) return;
   syncing = true;
   try {
     const res = await fetch('/api/sync', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ code, items }),
     });
     if (!res.ok) throw new Error('sync ' + res.status);
     const data = await res.json();
     if (Array.isArray(data.items)) { mergeInto(data.items); render(); }
-    setDot('ok');
-    $('#syncStatus').textContent = 'Synced just now.';
-  } catch (e) {
-    setDot('err');
-    $('#syncStatus').textContent = 'Offline — saved on this device, will sync later.';
-  } finally {
-    syncing = false;
-  }
+    setDot('ok'); $('#syncStatus').textContent = 'Synced just now.';
+  } catch {
+    setDot('err'); $('#syncStatus').textContent = 'Offline — saved on this device, will sync later.';
+  } finally { syncing = false; }
 }
 
-/* ---------- capture UI ---------- */
-$('#capture').addEventListener('submit', e => {
+/* ---------- date label ---------- */
+function setDate() {
+  const d = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  $('#dateLabel').textContent = d;
+}
+
+/* ---------- capture wiring ---------- */
+// per-column add lines (iPad)
+$$('.col-add').forEach(form => form.addEventListener('submit', e => {
   e.preventDefault();
-  const input = $('#input');
-  addItem(input.value, pickedWhen);
-  input.value = '';
-  input.focus();
-});
-$$('.seg').forEach(seg => seg.addEventListener('click', () => {
-  $$('.seg').forEach(s => s.classList.remove('is-on'));
-  seg.classList.add('is-on');
-  pickedWhen = seg.dataset.when;
+  const input = $('input', form);
+  addItem(input.value, form.dataset.day);
+  input.value = ''; input.focus();
 }));
-$('#clearDone').addEventListener('click', clearDone);
+// phone add bar
+$('#addbar').addEventListener('submit', e => {
+  e.preventDefault();
+  const input = $('#barInput');
+  addItem(input.value, chipDay);
+  input.value = ''; input.focus();
+});
+$('#chip').addEventListener('click', () => {
+  chipDay = chipDay === 'today' ? 'tomorrow' : 'today';
+  const chip = $('#chip');
+  chip.dataset.day = chipDay;
+  chip.textContent = chipDay === 'today' ? 'TODAY' : 'TMRW';
+  $('#barInput').placeholder = chipDay === 'today' ? 'Add for today…' : 'Add for tomorrow…';
+});
 
 /* ---------- sync sheet ---------- */
 const sheet = $('#sheet');
-function openSheet() {
-  $('#codeInput').value = code;
-  $('#syncStatus').textContent = '';
-  sheet.hidden = false;
-}
-function closeSheet() { sheet.hidden = true; }
-
-$('#syncBtn').addEventListener('click', openSheet);
-$('#closeSheet').addEventListener('click', closeSheet);
-sheet.addEventListener('click', e => { if (e.target === sheet) closeSheet(); });
-
+$('#syncBtn').addEventListener('click', () => {
+  $('#codeInput').value = code; $('#syncStatus').textContent = ''; sheet.hidden = false;
+});
+$('#closeSheet').addEventListener('click', () => sheet.hidden = true);
+sheet.addEventListener('click', e => { if (e.target === sheet) sheet.hidden = true; });
 $('#copyCode').addEventListener('click', async () => {
   try { await navigator.clipboard.writeText(code); $('#syncStatus').textContent = 'Code copied.'; }
   catch { $('#codeInput').select(); }
@@ -210,26 +224,24 @@ $('#applyCode').addEventListener('click', () => {
   const v = $('#codeInput').value.trim().toUpperCase();
   if (!v) return;
   code = v; localStorage.setItem(K_CODE, code);
-  $('#syncStatus').textContent = 'Pulling that list…';
-  sync();
+  $('#syncStatus').textContent = 'Pulling that list…'; sync();
 });
 $('#newCode').addEventListener('click', () => {
   code = randomCode(); localStorage.setItem(K_CODE, code);
   $('#codeInput').value = code;
-  $('#syncStatus').textContent = 'New code created. Items on this device stay; paste this on your other devices.';
-  sync();
+  $('#syncStatus').textContent = 'New code created. Paste it on your other devices to pair.'; sync();
 });
 
 /* ---------- lifecycle ---------- */
-document.addEventListener('visibilitychange', () => { if (!document.hidden) { render(); sync(); } });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { setDate(); render(); sync(); } });
 window.addEventListener('online', sync);
-window.addEventListener('focus', render);
+window.addEventListener('focus', () => { setDate(); render(); });
 
-/* service worker */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('/sw.js').catch(() => {}));
 }
 
-/* first paint + initial sync */
+/* first paint */
+setDate();
 render();
 sync();
