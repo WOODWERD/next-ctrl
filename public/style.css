@@ -1,0 +1,207 @@
+/* ============================================================
+   Today — WOODWERD design system
+   Phone = option 2a (dense swipe list, bottom add bar)
+   iPad  = option 4a (two columns, per-column add line)
+   ============================================================ */
+
+/* ── Fonts (subset of WOODWERD faces actually used) ── */
+@font-face { font-family:'Gotham'; src:url('/fonts/Gotham-Book.otf') format('opentype'); font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:'Gotham'; src:url('/fonts/Gotham-Bold.otf') format('opentype'); font-weight:700; font-style:normal; font-display:swap; }
+@font-face { font-family:'CargoD'; src:url('/fonts/CargoD.otf') format('opentype'); font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:'Roboto'; src:url('/fonts/Roboto-Light.ttf') format('truetype'); font-weight:300; font-style:normal; font-display:swap; }
+@font-face { font-family:'Roboto'; src:url('/fonts/Roboto-Regular.ttf') format('truetype'); font-weight:400; font-style:normal; font-display:swap; }
+@font-face { font-family:'Roboto'; src:url('/fonts/Roboto-Medium.ttf') format('truetype'); font-weight:500; font-style:normal; font-display:swap; }
+
+:root {
+  --ink-900:#0C0B09; --ink-600:#46433D; --ink-500:#6B6560; --ink-400:#948E87;
+  --ink-300:#C4BDB5; --ink-200:#DDD8D1;
+  --canvas-white:#FDFCFA; --canvas-warm:#F9F7F3; --canvas-soft:#F2EFE9;
+  --accent:#C4944A; --accent-press:#A87830; --move:#46433D;
+  --font-body:'Gotham', system-ui, sans-serif;
+  --font-display:'CargoD','Gotham', serif;
+  --font-ui:'Roboto', system-ui, sans-serif;
+  --ease:cubic-bezier(0.25,0.1,0.25,1);
+  --safe-t:env(safe-area-inset-top,0px);
+  --safe-b:env(safe-area-inset-bottom,0px);
+}
+
+* { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body { margin:0; height:100%; }
+body {
+  background:var(--canvas-warm); color:var(--ink-900);
+  font-family:var(--font-body); font-size:15px;
+  overscroll-behavior-y:contain;
+  -webkit-font-smoothing:antialiased;
+}
+@keyframes rowIn { from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:none;} }
+
+/* ── App shell ── */
+.app { display:flex; flex-direction:column; height:100dvh; height:100vh; }
+
+/* ── Header (centered date + amber rule; sync tucked top-right) ── */
+.head {
+  position:relative;
+  padding:calc(var(--safe-t) + 18px) 20px 6px;
+  display:flex; flex-direction:column; align-items:center; gap:8px; flex:none;
+}
+.eyebrow {
+  font-family:var(--font-body); font-weight:700; font-size:10px;
+  letter-spacing:0.18em; text-transform:uppercase; color:var(--ink-500);
+}
+.rule { width:36px; height:2px; background:var(--accent); }
+.sync {
+  position:absolute; top:calc(var(--safe-t) + 14px); right:16px;
+  display:flex; align-items:center; gap:6px;
+  background:none; border:0; cursor:pointer;
+  font-family:var(--font-ui); font-weight:400; font-size:11px; letter-spacing:0.04em;
+  color:var(--ink-400); padding:6px;
+}
+.dot-sync { width:7px; height:7px; border-radius:9999px; background:var(--ink-300); transition:background .2s; }
+.dot-sync.ok { background:var(--accent); }
+.dot-sync.err { background:#B83232; }
+
+/* ── Board: phone stacks the two columns; iPad puts them side by side ── */
+.board { flex:1; min-height:0; overflow:auto; display:flex; flex-direction:column; }
+.col { display:flex; flex-direction:column; min-width:0; }
+.col-body { padding:0; }
+
+/* Column header: phone = tiny uppercase label, iPad = CargoD display word */
+.col-head {
+  display:flex; align-items:baseline; justify-content:space-between;
+  padding:14px 20px 8px;
+}
+.col + .col .col-head { padding-top:26px; }        /* Tomorrow gets breathing room on phone */
+.col-name {
+  font-family:var(--font-body); font-weight:700; font-size:11px;
+  letter-spacing:0.18em; text-transform:uppercase; color:var(--ink-900);
+}
+.col[data-day="tomorrow"] .col-name { color:var(--ink-500); }
+.col-count { font-family:var(--font-ui); font-weight:400; font-size:11px; color:var(--ink-400); }
+.empty {
+  padding:10px 20px; margin:0;
+  font-family:var(--font-body); font-style:italic; font-size:13px; color:var(--ink-400);
+}
+.list { list-style:none; margin:0; padding:0; }
+
+/* ── Swipe row ── */
+.row { position:relative; overflow:hidden; border-bottom:1px solid var(--ink-200); }
+.under {
+  position:absolute; inset:0; display:flex; align-items:center; justify-content:space-between;
+  padding:0 18px; background:var(--accent);
+}
+.under-done, .under-move {
+  font-family:var(--font-body); font-weight:700; font-size:10px;
+  letter-spacing:0.14em; color:var(--canvas-white);
+}
+.fg {
+  position:relative; background:var(--canvas-warm);
+  padding:13px 20px; display:flex; align-items:center; gap:10px;
+  touch-action:pan-y; cursor:grab; user-select:none;
+  transition:transform 360ms var(--ease), opacity 360ms var(--ease);
+}
+.fg.dragging { transition:none; }
+.row.entering .fg { animation:rowIn 200ms var(--ease); }
+.dot { width:5px; height:5px; flex:none; border-radius:9999px; background:var(--accent); }
+.col[data-day="tomorrow"] .dot { background:var(--ink-300); }
+.txt { flex:1; font-family:var(--font-body); font-weight:400; font-size:15px; line-height:1.3; color:var(--ink-900); }
+.col[data-day="tomorrow"] .txt { color:var(--ink-500); }
+
+/* ── Per-column add line (iPad only) ── */
+.col-add { display:none; gap:10px; align-items:center; padding:12px 44px 26px; }
+.col-add input {
+  flex:1; border:0; border-bottom:1px solid var(--ink-300); background:none;
+  padding:10px 2px; font-family:var(--font-body); font-size:16px; color:var(--ink-900); outline:none;
+}
+.col-add input:focus { border-color:var(--accent); }
+.plus {
+  width:40px; height:40px; flex:none; border:0; background:var(--ink-900);
+  color:var(--canvas-warm); font-family:var(--font-ui); font-weight:300; font-size:22px;
+  cursor:pointer; border-radius:2px; transition:background .12s;
+}
+.plus:hover { background:var(--accent); }
+.plus:active { transform:scale(0.97); }
+
+/* ── Hint + bottom add bar (phone only) ── */
+.hint {
+  padding:22px 20px 8px; margin:0; text-align:center;
+  font-family:var(--font-ui); font-weight:400; font-size:11px; color:var(--ink-400);
+}
+.addbar {
+  flex:none; display:flex; gap:10px; align-items:center;
+  padding:12px 18px calc(var(--safe-b) + 14px);
+  background:var(--canvas-white); border-top:1px solid var(--ink-200);
+}
+.chip {
+  flex:none; border:1px solid var(--ink-300); background:var(--ink-900); color:var(--canvas-warm);
+  font-family:var(--font-ui); font-weight:500; font-size:11px; letter-spacing:0.06em;
+  padding:8px 12px; cursor:pointer; border-radius:9999px;
+}
+.chip[data-day="tomorrow"] { background:var(--accent); }
+.addbar input {
+  flex:1; border:1px solid var(--ink-200); background:var(--canvas-warm);
+  padding:12px 14px; font-family:var(--font-body); font-size:15px; color:var(--ink-900);
+  border-radius:2px; outline:none;
+}
+.addbar input:focus { border-color:var(--accent); }
+.addbar .plus { width:46px; height:46px; font-size:24px; }
+
+/* ════════════════ iPad / wide: two-column layout (option 4a) ════════════════ */
+@media (min-width:700px) {
+  .head { padding:calc(var(--safe-t) + 32px) 48px 16px; }
+  .board { flex-direction:row; }
+  .col { flex:1; }
+  .col[data-day="today"] { border-right:1px solid var(--ink-200); }
+  .col + .col .col-head { padding-top:8px; }
+  .col-head { padding:8px 44px 10px; align-items:baseline; }
+  .col-name { font-family:var(--font-display); font-weight:400; font-size:34px;
+              letter-spacing:0; text-transform:none; }
+  .col-count { font-size:12px; }
+  .col-body { flex:1; overflow:auto; padding:0 44px; }
+  .fg { padding:16px 2px; gap:12px; }
+  .txt { font-size:16px; line-height:1.35; }
+  .under { padding:0 14px; }
+  .empty { padding:20px 44px; font-size:14px; }
+  .col-add { display:flex; }
+  .hint, .addbar { display:none; }
+}
+
+/* ── Sync sheet ── */
+.sheet {
+  position:fixed; inset:0; background:rgba(12,11,9,0.4);
+  display:grid; place-items:end center; z-index:300;
+  padding:0 12px calc(var(--safe-b) + 12px);
+}
+.sheet[hidden] { display:none; }
+.sheet-card {
+  width:100%; max-width:480px; background:var(--canvas-white);
+  border:1px solid var(--ink-200); border-radius:4px; padding:24px;
+  animation:rise .22s var(--ease);
+}
+@keyframes rise { from{transform:translateY(30px);opacity:0;} to{transform:none;opacity:1;} }
+.sheet-card h3 {
+  margin:0 0 8px; font-family:var(--font-display); font-weight:400; font-size:28px; color:var(--ink-900);
+}
+.muted { color:var(--ink-500); font-family:var(--font-body); line-height:1.55; }
+.small { font-size:13px; }
+.fld { display:block; margin:16px 0; }
+.fld > span {
+  display:block; font-family:var(--font-ui); font-weight:500; font-size:11px;
+  letter-spacing:0.06em; text-transform:uppercase; color:var(--ink-400); margin-bottom:7px;
+}
+.row2 { display:flex; gap:8px; }
+.row2 input {
+  flex:1; border:1px solid var(--ink-200); background:var(--canvas-warm);
+  padding:12px 14px; font-family:var(--font-ui); font-size:15px; letter-spacing:0.02em;
+  color:var(--ink-900); border-radius:2px; outline:none;
+}
+.row2 input:focus { border-color:var(--accent); }
+.btn {
+  padding:12px 16px; font-family:var(--font-ui); font-weight:500; font-size:14px;
+  background:var(--canvas-soft); color:var(--ink-900);
+  border:1px solid var(--ink-200); border-radius:2px; cursor:pointer;
+}
+.btn.primary { background:var(--ink-900); color:var(--canvas-warm); border-color:var(--ink-900); }
+.btn.primary:hover { background:var(--accent); border-color:var(--accent); }
+.btn.ghost { background:none; border-color:transparent; color:var(--ink-500); }
+.sheet-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+.sheet-actions .primary { flex:1; }

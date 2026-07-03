@@ -1,0 +1,13 @@
+name = "today"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
+
+# Static site (everything in public/) is served by the assets binding.
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+# Cross-device storage.
+[[kv_namespaces]]
+binding = "TODOS"
+id = "f8c3128d6a1a4b63aa7a38d77eeaf7e6"
