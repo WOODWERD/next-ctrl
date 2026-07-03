@@ -8,8 +8,8 @@ the same list across all your devices. Styled with the **WOODWERD** design syste
 - **Swipe to act** — swipe a task **right to finish**, **left to move** it to the other day.
 - **Standalone app** — add to Home Screen; opens full-screen, no browser chrome.
 - **Offline** — everything is saved on-device instantly; syncs when you're online.
-- **Cross-device sync** — a private *sync code* pairs your phone and iPad to one list.
-  No account, no login.
+- **Private, one login** — a single password (built into the app) gates your list; every
+  device you sign into shares it. Works in every browser, including iPad Chrome.
 - **Auto rollover** — a task set for Tomorrow simply becomes Today when the day flips.
 - **Responsive** — phone shows one dense scrolling list; iPad shows Today and Tomorrow
   as two side-by-side columns, each with its own add line.
@@ -34,7 +34,11 @@ binding step.
 3. **Create the app:** **Workers & Pages → Create → Workers → Import a repository**, pick this
    repo. Leave **Build command** empty; **Deploy command** is `npx wrangler deploy`.
    Click **Deploy**. The Worker reads `wrangler.toml` for the `public/` assets and the KV binding.
-4. Cloudflare gives you a `https://today.<your-subdomain>.workers.dev` URL. Done.
+4. **Set your password:** in the Worker → **Settings → Variables and Secrets → Add → Secret**,
+   name **`APP_PASSWORD`**, value = a strong password. (Or CLI: `npx wrangler secret put APP_PASSWORD`.)
+   Until this is set, the app can't be unlocked in production.
+5. Cloudflare gives you a `https://today.<your-subdomain>.workers.dev` URL. Open it and log in
+   with that password. Done.
 
 > The build deploys from your repo's **production branch** (default `main`). Make sure the
 > app is on that branch, or change it under **Settings → Build → Branch control**.
@@ -65,15 +69,17 @@ on Cloudflare, the record is added for you and goes live in a minute.
 
 ## Share one list across devices
 
-1. On the first device, tap **Sync** (top right). Tap **Copy** to copy your sync code.
-2. On the second device, open the app, tap **Sync**, paste the code into the box,
-   tap **Use this code**. Both devices now share the same list.
+Just **log in with the same password** on each device — phone, iPad, desktop. They all share
+one list automatically (no codes, no pairing). Sessions last 90 days; **Sign out** (top right)
+ends one. Change the password anytime by updating the `APP_PASSWORD` secret — that also signs
+every device out.
 
-The dot next to **Sync** is green when the last sync succeeded, red when you're offline
-(your edits are still saved locally and will sync automatically once you're back online).
+The dot next to **Sign out** is green when the last sync succeeded, red when you're offline
+(edits are saved on-device and sync automatically once you're back online).
 
-> The sync code is the only key to your list — anyone with it can read/write your tasks,
-> so keep it private. Tap **New code** any time to rotate it.
+> The app runs in any browser. To keep the URL itself private you can *also* put Cloudflare
+> Access in front, but it isn't required — the password already gates all your data, and a
+> first-party login avoids the iPad-Chrome issues Access has.
 
 ---
 

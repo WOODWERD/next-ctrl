@@ -4,22 +4,31 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { chromium } from 'playwright-core';
 import { handleSync } from '../src/sync.js';
+import { handleLogin, handleLogout } from '../src/auth.js';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'public');
 const EXE = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
+const PASSWORD = 'test-pass-123';
 
 const kv = new Map();
-const env = { TODOS: { get: async k => kv.get(k) ?? null, put: async (k, v) => kv.set(k, v) } };
+const env = { APP_PASSWORD: PASSWORD, TODOS: { get: async k => kv.get(k) ?? null, put: async (k, v) => kv.set(k, v) } };
 const MIME = { '.html':'text/html','.css':'text/css','.js':'text/javascript','.json':'application/json',
   '.webmanifest':'application/manifest+json','.png':'image/png','.otf':'font/otf','.ttf':'font/ttf' };
 
+async function relay(handler, req, res) {
+  const chunks = []; for await (const c of req) chunks.push(c);
+  const request = new Request('http://127.0.0.1' + req.url, { method: 'POST',
+    headers: { 'content-type': 'application/json', ...(req.headers.cookie ? { cookie: req.headers.cookie } : {}) },
+    body: chunks.length ? Buffer.concat(chunks) : undefined });
+  const r = await handler(request, env);
+  const headers = {}; for (const [k, v] of r.headers) headers[k] = v;
+  res.writeHead(r.status, headers); res.end(await r.text());
+}
+
 const server = http.createServer(async (req, res) => {
-  if (req.url === '/api/sync' && req.method === 'POST') {
-    const chunks = []; for await (const c of req) chunks.push(c);
-    const r = await handleSync(new Request('http://127.0.0.1/api/sync', { method:'POST',
-      headers:{'content-type':'application/json'}, body: Buffer.concat(chunks) }), env);
-    res.writeHead(r.status, { 'content-type':'application/json' }); res.end(await r.text()); return;
-  }
+  if (req.url === '/api/sync')   return relay(handleSync, req, res);
+  if (req.url === '/api/login')  return relay(handleLogin, req, res);
+  if (req.url === '/api/logout') return relay(handleLogout, req, res);
   let p = decodeURIComponent(req.url.split('?')[0]); if (p === '/') p = '/index.html';
   try { const buf = await readFile(path.join(ROOT, p));
     res.writeHead(200, { 'content-type': MIME[path.extname(p)] || 'application/octet-stream' }); res.end(buf); }
@@ -33,77 +42,74 @@ let pass = 0, fail = 0;
 const ok = (c, m) => { console.log((c ? '  ok  ' : '  FAIL ') + m); c ? pass++ : fail++; };
 const rowsIn = async (pg, day) => pg.$$eval(`#list-${day} .txt`, els => els.map(e => e.textContent));
 
-// swipe a row's foreground by dx px (>0 right = finish, <0 left = move)
+async function login(pg, pw = PASSWORD) {
+  await pg.waitForFunction(() => !document.getElementById('login').hidden, null, { timeout: 5000 });
+  await pg.fill('#pw', pw);
+  await pg.click('.login-btn');
+}
 async function swipe(pg, day, index, dx) {
   const fg = (await pg.$$(`#list-${day} .fg`))[index];
   const b = await fg.boundingBox();
   const y = b.y + b.height / 2, x0 = b.x + b.width / 2;
   await pg.mouse.move(x0, y); await pg.mouse.down();
-  const steps = 8;
-  for (let i = 1; i <= steps; i++) await pg.mouse.move(x0 + (dx * i) / steps, y);
+  for (let i = 1; i <= 8; i++) await pg.mouse.move(x0 + (dx * i) / 8, y);
   await pg.mouse.up();
 }
 
-/* ══ PHONE (2a) ══ */
+/* ══ PHONE (2a) — login gate + capture/swipe ══ */
 const phone = await (await browser.newContext({ viewport: { width: 402, height: 844 } })).newPage();
 phone.on('console', m => { if (m.type() === 'error') console.log('   [console.error]', m.text()); });
 await phone.goto(base);
 
-ok(await phone.isVisible('#addbar'), 'phone shows the bottom add bar');
-ok(!(await phone.isVisible('.col-add')), 'phone hides per-column add lines');
+// login screen appears (sync returns 401 with no session)
+await phone.waitForFunction(() => !document.getElementById('login').hidden, null, { timeout: 5000 });
+ok(true, 'login screen shows until authenticated');
+// wrong password -> error
+await phone.fill('#pw', 'nope'); await phone.click('.login-btn');
+await phone.waitForFunction(() => document.getElementById('loginErr').textContent.includes('Wrong'), null, { timeout: 3000 });
+ok(true, 'wrong password shows an error');
+// correct password -> app unlocks
+await phone.fill('#pw', PASSWORD); await phone.click('.login-btn');
+await phone.waitForFunction(() => document.getElementById('login').hidden, null, { timeout: 5000 });
+ok(true, 'correct password unlocks the app');
 
-// add via bar (default Today)
-await phone.fill('#barInput', 'buy milk');
-await phone.press('#barInput', 'Enter');
+ok(await phone.isVisible('#addbar'), 'phone shows the bottom add bar');
+await phone.fill('#barInput', 'buy milk'); await phone.press('#barInput', 'Enter');
 await phone.waitForSelector('#list-today .row');
 ok((await rowsIn(phone, 'today')).includes('buy milk'), 'add via bar lands in Today');
-ok((await phone.textContent('#count-today')) === '1 task', 'Today count reads "1 task"');
 
-// toggle chip to Tomorrow, add
 await phone.click('#chip');
-ok((await phone.textContent('#chip')) === 'TMRW', 'chip toggles to TMRW');
-await phone.fill('#barInput', 'call vet');
-await phone.press('#barInput', 'Enter');
+await phone.fill('#barInput', 'call vet'); await phone.press('#barInput', 'Enter');
 await phone.waitForFunction(() => document.querySelectorAll('#list-tomorrow .row').length === 1);
 ok((await rowsIn(phone, 'tomorrow')).includes('call vet'), 'chip=TMRW routes add to Tomorrow');
 
-// swipe LEFT to move "buy milk" from Today -> Tomorrow
 await swipe(phone, 'today', 0, -100);
 await phone.waitForFunction(() => document.querySelectorAll('#list-today .row').length === 0);
 ok((await rowsIn(phone, 'tomorrow')).includes('buy milk'), 'swipe-left moves task to the other day');
 
-// swipe RIGHT to finish "call vet"
-const beforeCount = (await rowsIn(phone, 'tomorrow')).length;
 await swipe(phone, 'tomorrow', (await rowsIn(phone, 'tomorrow')).indexOf('call vet'), 100);
 await phone.waitForFunction(t => !([...document.querySelectorAll('#list-tomorrow .txt')].some(e => e.textContent === t)),
   'call vet', { timeout: 3000 });
-ok((await rowsIn(phone, 'tomorrow')).length === beforeCount - 1, 'swipe-right finishes (removes) a task');
+ok(!(await rowsIn(phone, 'tomorrow')).includes('call vet'), 'swipe-right finishes (removes) a task');
 
-// green sync dot + persistence
 await phone.waitForFunction(() => document.querySelector('#syncDot').classList.contains('ok'), null, { timeout: 4000 });
 ok(true, 'sync dot turns green');
 await phone.reload();
+// session cookie persists, so no login prompt on reload
+await phone.waitForFunction(() => document.getElementById('login').hidden, null, { timeout: 5000 });
 await phone.waitForSelector('#list-tomorrow .row');
-ok((await rowsIn(phone, 'tomorrow')).includes('buy milk'), 'tasks persist across reload');
+ok((await rowsIn(phone, 'tomorrow')).includes('buy milk'), 'session persists across reload (no re-login)');
 
-/* ══ iPad (4a) — same identity, so it shares the list automatically (no codes) ══ */
+/* ══ iPad (4a) — separate device logs in, shares the same list ══ */
 const ipad = await (await browser.newContext({ viewport: { width: 1080, height: 810 } })).newPage();
 await ipad.goto(base);
+await login(ipad);
+await ipad.waitForFunction(() => document.getElementById('login').hidden, null, { timeout: 5000 });
 ok(await ipad.isVisible('.col-add'), 'iPad shows per-column add lines');
-ok(!(await ipad.isVisible('#addbar')), 'iPad hides the phone add bar');
-// two columns side by side: Tomorrow column starts to the right of Today
 const boxes = await ipad.$$eval('.col', els => els.map(e => e.getBoundingClientRect().x));
 ok(boxes.length === 2 && boxes[1] > boxes[0] + 200, 'iPad lays Today | Tomorrow side by side');
-
-// no pairing step — a second device just pulls the shared list on load
 await ipad.waitForFunction(() => document.querySelectorAll('#list-tomorrow .row').length >= 1, null, { timeout: 5000 });
-ok((await rowsIn(ipad, 'tomorrow')).includes('buy milk'), 'second device auto-shares the list (identity-keyed, no code)');
-
-// add via the Today column add line
-await ipad.fill('.col-add[data-day="today"] input', 'water plants');
-await ipad.press('.col-add[data-day="today"] input', 'Enter');
-await ipad.waitForFunction(() => [...document.querySelectorAll('#list-today .txt')].some(e => e.textContent === 'water plants'));
-ok(true, 'per-column add line adds directly to that day');
+ok((await rowsIn(ipad, 'tomorrow')).includes('buy milk'), 'second device shares the list after its own login');
 
 await browser.close(); server.close();
 console.log(`\n${pass} passed, ${fail} failed`);

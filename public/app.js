@@ -160,6 +160,7 @@ async function sync() {
       method: 'POST', headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ items }),
     });
+    if (res.status === 401) { setDot('err'); showLogin(); return; }
     if (!res.ok) throw new Error('sync ' + res.status);
     const data = await res.json();
     if (Array.isArray(data.items)) { mergeInto(data.items); render(); }
@@ -168,6 +169,29 @@ async function sync() {
     setDot('err');
   } finally { syncing = false; }
 }
+
+/* ---------- login ---------- */
+function showLogin(msg) {
+  $('#loginErr').textContent = msg || '';
+  $('#login').hidden = false;
+  $('#pw').focus();
+}
+function hideLogin() { $('#login').hidden = true; }
+
+$('#loginForm').addEventListener('submit', async e => {
+  e.preventDefault();
+  const pw = $('#pw').value;
+  if (!pw) return;
+  try {
+    const res = await fetch('/api/login', {
+      method: 'POST', headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ password: pw }),
+    });
+    if (res.ok) { $('#pw').value = ''; hideLogin(); sync(); }
+    else if (res.status === 401) showLogin('Wrong password');
+    else showLogin('Login unavailable — check the server password is set.');
+  } catch { showLogin('Network error — try again.'); }
+});
 
 /* ---------- date label ---------- */
 function setDate() {
@@ -196,9 +220,11 @@ $('#chip').addEventListener('click', () => {
   $('#barInput').placeholder = chipDay === 'today' ? 'Add for today…' : 'Add for tomorrow…';
 });
 
-/* Sign out of Cloudflare Access */
-$('#signout').addEventListener('click', () => {
-  window.location.href = '/cdn-cgi/access/logout';
+/* Sign out (clears the session cookie, then shows the login screen) */
+$('#signout').addEventListener('click', async () => {
+  try { await fetch('/api/logout', { method: 'POST' }); } catch {}
+  setDot('');
+  showLogin('Signed out');
 });
 
 /* ---------- lifecycle ---------- */

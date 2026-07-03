@@ -11,12 +11,15 @@ done. Installable PWA, works offline, syncs one list across the owner's devices.
 - **Static assets:** everything in `public/`, served automatically via the `[assets]` binding.
 - **API:** `POST /api/sync` handled by the Worker (`src/index.js` → `src/sync.js`).
 - **Storage:** Workers **KV** namespace bound as `TODOS` (id in `wrangler.toml`).
-- **Auth/privacy:** **Cloudflare Access** protects `today.woodwerd.com` (Self-hosted app,
-  policy allows the owner's email). The Worker reads the identity from the
-  `Cf-Access-Authenticated-User-Email` header and keys each list to that email, so all of a
-  user's logged-in devices share one list — no sync codes. Requests without an identity
-  **fail closed (401)**, except `localhost` for `wrangler dev`. Keep the `workers.dev` route
-  **disabled** so the Worker is only reachable through the Access-gated hostname.
+- **Auth/privacy:** **built-in login** (`src/auth.js`). Single-user password stored as the
+  Worker secret `APP_PASSWORD` (`wrangler secret put APP_PASSWORD`, or the dashboard). A
+  successful `POST /api/login` sets a signed first-party `sid` cookie (HMAC key derived from
+  the password; 90-day TTL); `POST /api/logout` clears it. `/api/sync` requires a valid
+  session (else 401) and stores everything under one key (`list:owner`), so all logged-in
+  devices share one list. The app shell is public; the login screen (`#login`) shows until a
+  session exists. No `APP_PASSWORD` set → only `localhost` is allowed (for `wrangler dev`).
+  Chosen over Cloudflare Access because a first-party cookie works in every browser incl.
+  iPad Chrome (Access's cross-site redirect breaks under iOS WebKit).
 
 ## Key files
 
