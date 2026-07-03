@@ -1,0 +1,8 @@
+name = "today"
+compatibility_date = "2024-09-01"
+pages_build_output_dir = "public"
+
+# Cross-device storage. Create the namespace once (see README), then paste its id here.
+[[kv_namespaces]]
+binding = "TODOS"
+id = "PASTE_YOUR_KV_NAMESPACE_ID_HERE"

@@ -1,0 +1,14 @@
+{
+  "name": "today",
+  "version": "1.0.0",
+  "private": true,
+  "description": "A fast capture list — today or tomorrow. Installable PWA with cross-device sync.",
+  "scripts": {
+    "dev": "wrangler pages dev public --kv TODOS",
+    "deploy": "wrangler pages deploy public",
+    "icons": "python3 scripts/make_icons.py"
+  },
+  "devDependencies": {
+    "wrangler": "^3.80.0"
+  }
+}

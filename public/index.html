@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <title>Today</title>
+  <meta name="description" content="A fast capture list. Today or tomorrow. That's it." />
+
+  <!-- PWA -->
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <meta name="theme-color" content="#0b0b0f" media="(prefers-color-scheme: dark)" />
+  <meta name="theme-color" content="#f7f7fa" media="(prefers-color-scheme: light)" />
+
+  <!-- iOS standalone -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Today" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="icon" href="/icon-192.png" />
+
+  <link rel="stylesheet" href="/style.css" />
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <h1>Today</h1>
+      <button id="syncBtn" class="ghost" aria-label="Sync settings" title="Sync across devices">
+        <span id="syncDot" class="dot"></span>
+        Sync
+      </button>
+    </header>
+
+    <form id="capture" class="capture" autocomplete="off">
+      <input id="input" class="input" type="text" placeholder="What needs doing?"
+             enterkeyhint="done" autocapitalize="sentences" />
+      <div class="when" role="tablist" aria-label="When">
+        <button type="button" class="seg is-on" data-when="today" role="tab">Today</button>
+        <button type="button" class="seg" data-when="tomorrow" role="tab">Tomorrow</button>
+      </div>
+    </form>
+
+    <main class="lists">
+      <section class="bucket" data-bucket="today">
+        <h2>Today</h2>
+        <ul id="list-today" class="list"></ul>
+        <p class="empty" data-empty="today">Nothing yet. Add something above.</p>
+      </section>
+
+      <section class="bucket" data-bucket="tomorrow">
+        <h2>Tomorrow</h2>
+        <ul id="list-tomorrow" class="list"></ul>
+        <p class="empty" data-empty="tomorrow">Clear for tomorrow.</p>
+      </section>
+
+      <button id="clearDone" class="cleardone" hidden>Clear completed</button>
+    </main>
+  </div>
+
+  <!-- Sync sheet -->
+  <div id="sheet" class="sheet" hidden>
+    <div class="sheet-card" role="dialog" aria-modal="true" aria-label="Sync">
+      <h3>Sync across devices</h3>
+      <p class="muted">Your list lives under a private sync code. Open this app on another
+        device, tap <b>Sync</b>, and paste the same code to share one list.</p>
+
+      <label class="fld">
+        <span>Your sync code</span>
+        <div class="row">
+          <input id="codeInput" class="input mono" type="text" spellcheck="false" autocapitalize="off" />
+          <button id="copyCode" class="btn">Copy</button>
+        </div>
+      </label>
+
+      <div class="sheet-actions">
+        <button id="applyCode" class="btn primary">Use this code</button>
+        <button id="newCode" class="btn">New code</button>
+        <button id="closeSheet" class="btn ghost">Close</button>
+      </div>
+      <p id="syncStatus" class="muted small"></p>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
