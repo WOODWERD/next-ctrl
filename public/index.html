@@ -69,6 +69,19 @@
     </form>
   </div>
 
+  <!-- Login (built-in; shown until a valid session exists) -->
+  <div id="login" class="login" hidden>
+    <form id="loginForm" class="login-card">
+      <div class="eyebrow">WOODWERD</div>
+      <div class="login-title">Today</div>
+      <div class="login-rule"></div>
+      <input id="pw" type="password" placeholder="Password" autocomplete="current-password"
+             autocapitalize="off" enterkeyhint="go" aria-label="Password" />
+      <button type="submit" class="login-btn">Enter</button>
+      <p id="loginErr" class="login-err" role="alert"></p>
+    </form>
+  </div>
+
   <script src="/app.js"></script>
 </body>
 </html>

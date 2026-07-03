@@ -1,40 +1,29 @@
 /**
- * Cross-device sync handler — identity-based (Cloudflare Access).
+ * Cross-device sync handler — gated by the built-in session (see auth.js).
  *
  * POST /api/sync
  *   Body:  { items: Item[] }
  *   Reply: { items: Item[] }   (the merged list, including tombstones)
  *
- * The list is keyed to the authenticated user's email, injected by Cloudflare
- * Access as the `Cf-Access-Authenticated-User-Email` header. Every device the
- * user logs into therefore shares one list automatically — no sync codes.
+ * Single user, so the list lives under one key; every logged-in device shares
+ * it. Requests without a valid session are rejected (401).
  *
- * Fail-closed: with no identity (and not on localhost for `wrangler dev`),
- * requests are rejected. Keep the worker reachable ONLY through the
- * Access-protected hostname (disable the workers.dev route).
- *
- * Storage: one JSON blob per user in the KV namespace bound as `TODOS`.
+ * Storage: KV namespace bound as `TODOS`.
  * Merge:   per-item, newest `updatedAt` wins. Deletes travel as `deleted:true`
  *          tombstones and are garbage-collected after 30 days.
  */
 
+import { verifySession } from './auth.js';
+
 const TOMBSTONE_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const MAX_ITEMS = 2000;
+const LIST_KEY = 'list:owner';
 
 const json = (obj, status = 200) =>
   new Response(JSON.stringify(obj), {
     status,
     headers: { 'content-type': 'application/json', 'cache-control': 'no-store' },
   });
-
-/** Storage key for the caller, or null if unauthenticated. */
-function userKeyFrom(request) {
-  const email = request.headers.get('Cf-Access-Authenticated-User-Email');
-  if (email && email.includes('@')) return 'user:' + email.trim().toLowerCase();
-  const host = new URL(request.url).hostname;             // allow local `wrangler dev`
-  if (host === 'localhost' || host === '127.0.0.1') return 'dev:local';
-  return null;
-}
 
 function sanitizeItem(x) {
   if (!x || typeof x !== 'object') return null;
@@ -67,15 +56,14 @@ export async function handleSync(request, env) {
     return json({ error: 'KV namespace TODOS is not bound. See README.' }, 500);
   }
 
-  const who = userKeyFrom(request);
-  if (!who) return json({ error: 'unauthenticated' }, 401);
+  if (!(await verifySession(request, env))) return json({ error: 'unauthenticated' }, 401);
 
   let body;
   try { body = await request.json(); }
   catch { return json({ error: 'invalid json' }, 400); }
 
   const incoming = Array.isArray(body.items) ? body.items : [];
-  const key = 'list:' + who;
+  const key = LIST_KEY;
 
   const storedRaw = await env.TODOS.get(key);
   const stored = storedRaw ? (JSON.parse(storedRaw).items || []) : [];
