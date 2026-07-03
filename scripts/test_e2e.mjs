@@ -29,6 +29,10 @@ const server = http.createServer(async (req, res) => {
   if (req.url === '/api/sync')   return relay(handleSync, req, res);
   if (req.url === '/api/login')  return relay(handleLogin, req, res);
   if (req.url === '/api/logout') return relay(handleLogout, req, res);
+  if (req.url === '/api/transcribe') {   // mock Whisper (real one runs on the live Worker)
+    for await (const _ of req) { /* drain */ }
+    res.writeHead(200, { 'content-type': 'application/json' }); res.end(JSON.stringify({ text: 'mic test' })); return;
+  }
   let p = decodeURIComponent(req.url.split('?')[0]); if (p === '/') p = '/index.html';
   try { const buf = await readFile(path.join(ROOT, p));
     res.writeHead(200, { 'content-type': MIME[path.extname(p)] || 'application/octet-stream' }); res.end(buf); }
@@ -36,7 +40,8 @@ const server = http.createServer(async (req, res) => {
 });
 await new Promise(r => server.listen(0, r));
 const base = `http://127.0.0.1:${server.address().port}`;
-const browser = await chromium.launch({ executablePath: EXE });
+const browser = await chromium.launch({ executablePath: EXE,
+  args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'] });
 
 let pass = 0, fail = 0;
 const ok = (c, m) => { console.log((c ? '  ok  ' : '  FAIL ') + m); c ? pass++ : fail++; };
@@ -57,7 +62,8 @@ async function swipe(pg, day, index, dx) {
 }
 
 /* ══ PHONE (2a) — login gate + capture/swipe ══ */
-const phone = await (await browser.newContext({ viewport: { width: 402, height: 844 } })).newPage();
+const phoneCtx = await browser.newContext({ viewport: { width: 402, height: 844 }, permissions: ['microphone'] });
+const phone = await phoneCtx.newPage();
 phone.on('console', m => { if (m.type() === 'error') console.log('   [console.error]', m.text()); });
 await phone.goto(base);
 
@@ -74,6 +80,16 @@ await phone.waitForFunction(() => document.getElementById('login').hidden, null,
 ok(true, 'correct password unlocks the app');
 
 ok(await phone.isVisible('#addbar'), 'phone shows the bottom add bar');
+
+// mic dictation: record (fake audio) -> transcribe (mocked) -> fills the add box
+ok(await phone.isVisible('#addbar .mic'), 'mic button shows when recording is supported');
+await phone.click('#addbar .mic');
+await phone.waitForTimeout(500);
+await phone.click('#addbar .mic');
+await phone.waitForFunction(() => document.getElementById('barInput').value.includes('mic test'), null, { timeout: 6000 });
+ok(true, 'mic dictation transcribes into the add box');
+await phone.fill('#barInput', '');
+
 await phone.fill('#barInput', 'buy milk'); await phone.press('#barInput', 'Enter');
 await phone.waitForSelector('#list-today .row');
 ok((await rowsIn(phone, 'today')).includes('buy milk'), 'add via bar lands in Today');

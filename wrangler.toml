@@ -11,3 +11,7 @@ binding = "ASSETS"
 [[kv_namespaces]]
 binding = "TODOS"
 id = "f8c3128d6a1a4b63aa7a38d77eeaf7e6"
+
+# Voice capture: Whisper speech-to-text (Workers AI).
+[ai]
+binding = "AI"

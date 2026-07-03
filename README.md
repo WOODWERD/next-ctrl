@@ -6,6 +6,7 @@ the same list across all your devices. Styled with the **WOODWERD** design syste
 
 - **Capture-first** — Enter to add. Two buckets only: Today / Tomorrow, both always visible.
 - **Swipe to act** — swipe a task **right to finish**, **left to move** it to the other day.
+- **Voice capture** — tap the 🎙️, speak a task; it's transcribed (Cloudflare Whisper AI) into the add box.
 - **Standalone app** — add to Home Screen; opens full-screen, no browser chrome.
 - **Offline** — everything is saved on-device instantly; syncs when you're online.
 - **Private, one login** — a single password (built into the app) gates your list; every

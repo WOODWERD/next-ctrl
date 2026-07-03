@@ -220,6 +220,53 @@ $('#chip').addEventListener('click', () => {
   $('#barInput').placeholder = chipDay === 'today' ? 'Add for today…' : 'Add for tomorrow…';
 });
 
+/* ---------- voice capture (mic -> Whisper -> add box) ---------- */
+function setupMic(btn, input) {
+  let rec = null, chunks = [], stream = null, recording = false, timer = null;
+
+  const stop = () => { clearTimeout(timer); if (rec && rec.state !== 'inactive') rec.stop(); };
+
+  btn.addEventListener('click', async () => {
+    if (recording) { stop(); return; }
+    try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+    catch { input.placeholder = 'Mic blocked — allow access'; return; }
+
+    chunks = [];
+    rec = new MediaRecorder(stream);
+    rec.ondataavailable = e => { if (e.data && e.data.size) chunks.push(e.data); };
+    rec.onstop = async () => {
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      recording = false;
+      btn.classList.remove('rec'); btn.classList.add('busy');
+      try {
+        const blob = new Blob(chunks, { type: (rec && rec.mimeType) || 'audio/webm' });
+        const res = await fetch('/api/transcribe', {
+          method: 'POST',
+          headers: { 'content-type': blob.type || 'application/octet-stream' },
+          body: blob,
+        });
+        if (res.ok) {
+          const { text } = await res.json();
+          if (text) input.value = input.value ? input.value.trim() + ' ' + text : text;
+        }
+      } catch {}
+      btn.classList.remove('busy');
+      input.focus();
+    };
+    rec.start();
+    recording = true;
+    btn.classList.add('rec');
+    timer = setTimeout(stop, 20000);          // safety cap
+  });
+}
+
+if (navigator.mediaDevices && window.MediaRecorder) {
+  $$('.mic').forEach(btn => {
+    btn.hidden = false;
+    setupMic(btn, btn.closest('form').querySelector('input'));
+  });
+}
+
 /* Sign out (clears the session cookie, then shows the login screen) */
 $('#signout').addEventListener('click', async () => {
   try { await fetch('/api/logout', { method: 'POST' }); } catch {}
