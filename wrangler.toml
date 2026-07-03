@@ -1,8 +1,13 @@
 name = "today"
-compatibility_date = "2024-09-01"
-pages_build_output_dir = "public"
+main = "src/index.js"
+compatibility_date = "2025-01-01"
 
-# Cross-device storage. Create the namespace once (see README), then paste its id here.
+# Static site (everything in public/) is served by the assets binding.
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+# Cross-device storage.
 [[kv_namespaces]]
 binding = "TODOS"
 id = "f8c3128d6a1a4b63aa7a38d77eeaf7e6"

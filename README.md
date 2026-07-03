@@ -14,46 +14,46 @@ the same list across all your devices. Styled with the **WOODWERD** design syste
 - **Responsive** — phone shows one dense scrolling list; iPad shows Today and Tomorrow
   as two side-by-side columns, each with its own add line.
 
-It's a static web app plus one tiny serverless function, hosted free on **Cloudflare Pages**.
+It's a single **Cloudflare Worker** that serves the static app *and* the sync API, backed
+by **Workers KV** — free at personal scale.
 
 ---
 
 ## Deploy it (about 10 minutes, free)
 
-You'll host the app on Cloudflare Pages and give it a small key-value store (Workers KV)
-for sync. Everything below is free at personal scale.
+You need a free Cloudflare account and a KV namespace. The KV namespace id already lives in
+`wrangler.toml` (`[[kv_namespaces]]`), so deploys bind storage automatically — no dashboard
+binding step.
 
-### Option A — GitHub + Cloudflare dashboard (easiest, auto-deploys on every push)
+### Option A — GitHub + Cloudflare dashboard (auto-deploys on every push to `main`)
 
-1. **Push this repo to GitHub** (already done if you're reading this there).
-2. Create a free account at <https://dash.cloudflare.com>.
-3. **Make the KV store:** in the dashboard go to **Storage & Databases → KV → Create namespace**,
-   name it `TODOS`. (You don't need to copy the id for this option.)
-4. **Create the site:** **Workers & Pages → Create → Pages → Connect to Git**, pick this repo.
-   - Framework preset: **None**
-   - Build command: *(leave empty)*
-   - Build output directory: **`public`**
-   - Click **Save and Deploy**.
-5. **Bind the KV store:** open your new Pages project → **Settings → Bindings → Add → KV namespace**.
-   - Variable name: **`TODOS`**  (must be exactly this)
-   - KV namespace: select **`TODOS`**
-   - Save, then **Deployments → Retry deployment** (or push any commit) so the binding takes effect.
-6. Open the URL Cloudflare gives you (e.g. `https://today-xxx.pages.dev`). Done.
+1. Create a free account at <https://dash.cloudflare.com>.
+2. **Make the KV store:** **Storage & Databases → KV → Create namespace** (any name).
+   Open its **Settings** tab, copy the **Namespace ID**, and paste it into `wrangler.toml`
+   (replace the `id = "…"` value), then commit.
+3. **Create the app:** **Workers & Pages → Create → Workers → Import a repository**, pick this
+   repo. Leave **Build command** empty; **Deploy command** is `npx wrangler deploy`.
+   Click **Deploy**. The Worker reads `wrangler.toml` for the `public/` assets and the KV binding.
+4. Cloudflare gives you a `https://today.<your-subdomain>.workers.dev` URL. Done.
+
+> The build deploys from your repo's **production branch** (default `main`). Make sure the
+> app is on that branch, or change it under **Settings → Build → Branch control**.
 
 ### Option B — Command line (Wrangler)
 
 ```bash
 npm install
 npx wrangler login
-
-# create the KV store and copy the id it prints
-npx wrangler kv namespace create TODOS
-#   -> paste the id into wrangler.toml (replace PASTE_YOUR_KV_NAMESPACE_ID_HERE)
-
+# put your KV namespace id in wrangler.toml, then:
 npm run deploy
 ```
 
 Run it locally first if you like: `npm run dev` then open the printed localhost URL.
+
+### Use your own domain
+
+In the Worker → **Domains → Add** → e.g. `today.woodwerd.com`. If the domain's DNS is already
+on Cloudflare, the record is added for you and goes live in a minute.
 
 ---
 
@@ -80,7 +80,7 @@ The dot next to **Sync** is green when the last sync succeeded, red when you're 
 ## How it's built
 
 ```
-public/                 the installable PWA (static)
+public/                 the installable PWA (static assets, served by the Worker)
   index.html            markup (one DOM drives both phone + iPad layouts)
   style.css             WOODWERD tokens + responsive phone/iPad styling
   app.js                local-first state, swipe gestures, per-item sync
@@ -88,8 +88,9 @@ public/                 the installable PWA (static)
   manifest.webmanifest  home-screen install metadata
   fonts/                WOODWERD faces: Gotham, CargoD, Roboto (see licensing)
   icon-*.png            app icons (regenerate with `npm run icons`)
-functions/api/sync.js   Cloudflare Pages Function: merges + stores the list in KV
-wrangler.toml           project + KV binding config
+src/index.js            Worker entry: routes /api/sync, serves public/ assets
+src/sync.js             sync handler: merges + stores the list in KV
+wrangler.toml           Worker config (assets dir + KV binding)
 scripts/make_icons.py   dependency-free icon generator
 scripts/test_*.mjs      sync unit tests + headless-browser end-to-end test
 ```

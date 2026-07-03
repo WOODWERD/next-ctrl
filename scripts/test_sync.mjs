@@ -1,4 +1,4 @@
-import { onRequestPost } from '../functions/api/sync.js';
+import { handleSync } from '../src/sync.js';
 
 // in-memory KV mock
 const store = new Map();
@@ -7,13 +7,10 @@ const env = { TODOS: {
   put: async (k, v) => { store.set(k, v); },
 }};
 
-const post = body => onRequestPost({
-  request: new Request('http://x/api/sync', {
-    method: 'POST', headers: { 'content-type': 'application/json' },
-    body: JSON.stringify(body),
-  }),
-  env,
-});
+const post = body => handleSync(new Request('http://x/api/sync', {
+  method: 'POST', headers: { 'content-type': 'application/json' },
+  body: JSON.stringify(body),
+}), env);
 
 let pass = 0, fail = 0;
 const ok = (c, m) => { if (c) { pass++; } else { fail++; console.log('  FAIL:', m); } };

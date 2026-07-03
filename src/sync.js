@@ -1,8 +1,9 @@
 /**
- * Cloudflare Pages Function: POST /api/sync
+ * Cross-device sync handler.
  *
- * Body:  { code: string, items: Item[] }
- * Reply: { items: Item[] }   (the merged list, including tombstones)
+ * POST /api/sync
+ *   Body:  { code: string, items: Item[] }
+ *   Reply: { items: Item[] }   (the merged list, including tombstones)
  *
  * Storage: one JSON blob per sync code in the KV namespace bound as `TODOS`.
  * Merge:   per-item, newest `updatedAt` wins. Deletes travel as `deleted:true`
@@ -23,10 +24,6 @@ const json = (obj, status = 200) =>
       'cache-control': 'no-store',
     },
   });
-
-export function onRequestOptions() {
-  return json({}, 204);
-}
 
 function cleanCode(raw) {
   if (typeof raw !== 'string') return null;
@@ -58,10 +55,11 @@ function mergeById(a, b) {
   return [...map.values()];
 }
 
-export async function onRequestPost(context) {
-  const { request, env } = context;
+export async function handleSync(request, env) {
+  if (request.method === 'OPTIONS') return json({}, 204);
+  if (request.method !== 'POST') return json({ error: 'method not allowed' }, 405);
 
-  if (!env.TODOS) {
+  if (!env || !env.TODOS) {
     return json({ error: 'KV namespace TODOS is not bound. See README.' }, 500);
   }
 
@@ -80,7 +78,6 @@ export async function onRequestPost(context) {
 
   let merged = mergeById(stored, incoming);
 
-  // garbage-collect old tombstones, then cap size
   const cutoff = Date.now() - TOMBSTONE_TTL_MS;
   merged = merged.filter(i => !(i.deleted && i.updatedAt < cutoff));
   if (merged.length > MAX_ITEMS) {

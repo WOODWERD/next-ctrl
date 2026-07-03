@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { chromium } from 'playwright-core';
-import { onRequestPost } from '../functions/api/sync.js';
+import { handleSync } from '../src/sync.js';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'public');
 const EXE = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
@@ -16,8 +16,8 @@ const MIME = { '.html':'text/html','.css':'text/css','.js':'text/javascript','.j
 const server = http.createServer(async (req, res) => {
   if (req.url === '/api/sync' && req.method === 'POST') {
     const chunks = []; for await (const c of req) chunks.push(c);
-    const r = await onRequestPost({ request: new Request('http://x/api/sync', { method:'POST',
-      headers:{'content-type':'application/json'}, body: Buffer.concat(chunks) }), env });
+    const r = await handleSync(new Request('http://x/api/sync', { method:'POST',
+      headers:{'content-type':'application/json'}, body: Buffer.concat(chunks) }), env);
     res.writeHead(r.status, { 'content-type':'application/json' }); res.end(await r.text()); return;
   }
   let p = decodeURIComponent(req.url.split('?')[0]); if (p === '/') p = '/index.html';
