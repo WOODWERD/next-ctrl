@@ -31,12 +31,15 @@ body {
   background:var(--canvas-warm); color:var(--ink-900);
   font-family:var(--font-body); font-size:15px;
   overscroll-behavior-y:contain;
+  overflow:hidden;               /* only the task lists scroll, never the shell */
   -webkit-font-smoothing:antialiased;
 }
 @keyframes rowIn { from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:none;} }
 
 /* ── App shell ── */
-.app { display:flex; flex-direction:column; height:100dvh; height:100vh; }
+/* 100vh first as a fallback, then 100dvh wins on browsers that support it so the
+   bottom add bar/lines sit at the visible edge (iPad Safari toolbars, etc.). */
+.app { display:flex; flex-direction:column; height:100vh; height:100dvh; }
 
 /* ── Header (centered date + amber rule; sync tucked top-right) ── */
 .head {
