@@ -1,5 +1,5 @@
 // Offline: network first, cache as a fallback. The list goes only to api.github.com; nothing of it passes through here.
-const VERSION = 'today-x0.0.7';
+const VERSION = 'today-x0.0.8';
 const FILES = ['./', 'index.html', 'tokens.css', 'styles.css', 'chrome.js', 'core.js', 'store.js', 'github.js', 'app.js', 'manifest.webmanifest',
   'fonts/Inter-Regular.woff2', 'fonts/Inter-Medium.woff2', 'fonts/Inter-SemiBold.woff2', 'fonts/Inter-Bold.woff2', 'fonts/jetbrains-mono-latin-400-normal.woff2', 'fonts/jetbrains-mono-latin-500-normal.woff2', 'favicon.svg'];
 self.addEventListener('install', (e) => e.waitUntil(caches.open(VERSION).then((c) => Promise.allSettled(FILES.map((f) => c.add(f)))).then(() => self.skipWaiting())));

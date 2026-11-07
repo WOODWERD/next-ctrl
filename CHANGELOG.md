@@ -2,6 +2,10 @@
 
 What changed in each version of TODAY, newest first. Versions are x-numbers until release.
 
+## x0.0.8 — 2026-11-07
+
+- **The toolkit strip matches the other tools.** GitHub and All WOODWERD tools sit side by side on one row again, and on a phone they and the theme buttons are full finger size. The theme switch's focus ring is drawn inside the button.
+
 ## x0.0.7 — 2026-11-07
 
 The first web version, unlisted, at [woodwerd.github.io/today](https://woodwerd.github.io/today/).
