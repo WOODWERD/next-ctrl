@@ -1,0 +1,8 @@
+.DS_Store
+node_modules/
+# Working files, kept private
+CLAUDE.md
+spec.md
+.claude/
+# Local stand-in data for screen checks, never committed
+standin/
