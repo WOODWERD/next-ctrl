@@ -1,4 +1,4 @@
-// TODAY record core (build step B2). Pure functions shared by the app and the /today skill.
+// Next Ctrl record core (build step B2). Pure functions shared by the app and the /today skill.
 // The record is items.json in the person's private repo (TD-R05):
 //   { version: 1, items: [{ id, text, due, created, done, updatedAt, by }] }
 // Every edit is a small change object, applied to whatever record was last read.
@@ -16,7 +16,7 @@ const YMD = /^\d{4}-\d{2}-\d{2}$/;
 export class RecordError extends Error {
   constructor(message) { super(message); this.name = 'RecordError'; }
 }
-// A file that isn't a TODAY record. The app stops and says so rather than write over it.
+// A file that isn't a Next Ctrl record. The app stops and says so rather than write over it.
 function broken(message) { const e = new RecordError(message); e.broken = true; return e; }
 export class ConflictError extends Error {
   constructor(message) { super(message); this.name = 'ConflictError'; }
@@ -43,7 +43,7 @@ export function emptyRecord() {
   return { version: RECORD_VERSION, items: [] };
 }
 
-// Throws RecordError for anything that isn't a TODAY record, so a broken file
+// Throws RecordError for anything that isn't a Next Ctrl record, so a broken file
 // is never overwritten (TD-E07). Unknown fields are kept as they are.
 export function parseRecord(text) {
   let data;

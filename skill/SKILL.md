@@ -1,9 +1,9 @@
 ---
 name: today
-description: TODAY, the person's own list of what to get done today and tomorrow, kept in their private GitHub repo. Use whenever they say "/today", start with "today:", or ask to add something to today's list, what's on today, or that something on it is done or should move to tomorrow. Works mid-chat on any other work; add, confirm in one line, carry on.
+description: Next Ctrl (said as /today), the person's own list of what to get done today and tomorrow, kept in their private GitHub repo. Use whenever they say "/today", start with "today:", or ask to add something to today's list, what's on today, or that something on it is done or should move to tomorrow. Works mid-chat on any other work; add, confirm in one line, carry on.
 ---
 
-# TODAY
+# Next Ctrl: /today
 
 The person keeps a short list: **Today** and **Tomorrow**. You add to it from what they say, and read or change it when asked. The list is `items.json` in their private GitHub repo. Anything unfinished rolls to Today by itself; you never move things at midnight.
 
@@ -27,8 +27,8 @@ One line, no lead-in, nothing after it. Mid-chat, go straight back to the work.
 | `/today` or "what's on today" | **Today** 1. call the plumber 2. email Sam (2 days) · **Tomorrow** 1. order hinge pins |
 | "done with the hinge pins" | Done: order hinge pins. |
 | "done with the call" when two match | Two match: 1. call the plumber 2. call Mom. Which one? |
-| Can't reach the repo | Couldn't reach your TODAY repo, so nothing was added: "order hinge pins". |
-| Not set up | TODAY isn't set up here. Tell me your record repo, like yourname/Today-RECORD. |
+| Can't reach the repo | Couldn't reach your Next Ctrl repo, so nothing was added: "order hinge pins". |
+| Not set up | Next Ctrl isn't set up here. Tell me your record repo, like yourname/Next-Ctrl-RECORD. |
 
 **Already there.** If an unfinished item already says the same thing (ignoring case and spacing), don't add it again; say "Already on Today: …" (or Tomorrow). Add the rest of the sentence as usual.
 
@@ -53,10 +53,10 @@ node <this skill folder>/today.mjs list --json        # ids, for done / move / e
 node <this skill folder>/today.mjs done <id>
 node <this skill folder>/today.mjs move <id>
 node <this skill folder>/today.mjs edit <id> "new words"
-node <this skill folder>/today.mjs setup yourname/Today-RECORD   # first time on a computer
+node <this skill folder>/today.mjs setup yourname/Next-Ctrl-RECORD   # first time on a computer
 ```
 
-Put all the items from one sentence in one `add` call, so they're one commit. The helper prints the reply line; say it as it is. To finish, move or edit, run `list --json` first and pick the id by meaning. If the helper says TODAY isn't set up, ask for the repo and run `setup`. It refuses a public repo.
+Put all the items from one sentence in one `add` call, so they're one commit. The helper prints the reply line; say it as it is. To finish, move or edit, run `list --json` first and pick the id by meaning. If the helper says Next Ctrl isn't set up, ask for the repo and run `setup`. It refuses a public repo.
 
 ### In the Claude app (phone, desktop, claude.ai) with the GitHub connector
 
@@ -64,7 +64,7 @@ Don't run `today.mjs` here; it's for Claude Code. Don't fetch github.com or api.
 
 If no GitHub connector tools are available in this chat, don't try anything else. Say: "Turn on GitHub for this chat (the tools button below the message box), then say it again." Repeat their words so nothing is lost.
 
-1. The repo name is the one they gave in this chat, or the one in your memory as "TODAY record: owner/name". If neither exists, ask once and save it.
+1. The repo name is the one they gave in this chat, or the one in your memory as "Next Ctrl record: owner/name". If neither exists, ask once and save it.
 2. Read `items.json` from that repo.
 3. Change only what was asked: append new items (skipping any already open with the same words), or set `done`, `due` or `text` on the one you matched. Leave every other item and field exactly as it is.
 4. Commit it with the message from `record-format.md`, like "Add: call the plumber".

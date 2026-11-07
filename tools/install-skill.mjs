@@ -15,4 +15,4 @@ rmSync(dest, { recursive: true, force: true });
 mkdirSync(dest, { recursive: true });
 for (const f of ['SKILL.md', 'record-format.md', 'today.mjs']) cpSync(join(repo, 'skill', f), join(dest, f));
 cpSync(join(repo, 'site', 'core.js'), join(dest, 'core.js'), { dereference: true });
-console.log(`Installed the TODAY skill in ${dest}`);
+console.log(`Installed the Next Ctrl skill in ${dest}`);

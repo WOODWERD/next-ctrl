@@ -1,6 +1,10 @@
 # Changelog
 
-What changed in each version of TODAY, newest first. Versions are x-numbers until release.
+What changed in each version of Next Ctrl, newest first. Versions are x-numbers until release.
+
+## x0.0.9 — 2026-11-07
+
+- **Renamed Next Ctrl,** to sit with the rest of the WOODWERD Toolkit. You still say `/today` to Claude, and the lists are still Today and Tomorrow. The app moved to [woodwerd.github.io/next-ctrl](https://woodwerd.github.io/next-ctrl/).
 
 ## x0.0.8 — 2026-11-07
 
@@ -8,7 +12,7 @@ What changed in each version of TODAY, newest first. Versions are x-numbers unti
 
 ## x0.0.7 — 2026-11-07
 
-The first web version, unlisted, at [woodwerd.github.io/today](https://woodwerd.github.io/today/).
+The first web version, unlisted, at [woodwerd.github.io/next-ctrl](https://woodwerd.github.io/next-ctrl/).
 
 - **Published** so it can be installed on a phone. It isn't in the All tools list yet.
 - **Already there.** Saying something that's already on your list doesn't add it twice; Claude says "Already on Today".
@@ -59,7 +63,7 @@ The list's rules, with tests. Kept on this computer. Not yet published.
 - **Today and Tomorrow by date.** Anything due today or earlier shows under Today, so unfinished items roll over at midnight with nothing having to run. From the second day, a rolled item says how many days.
 - **Add, finish, move, edit, and Undo for each.** Finished items stay in your file for 30 days, then leave it. Git history still has them.
 - **Plain commit messages,** like "Add: call the rep" or "Done: order pins".
-- **Safe saving from two places at once.** If your phone and Claude save at the same moment, the second one reads the list again and redoes just its own change, so neither is lost. A file that isn't a TODAY list is never written over.
+- **Safe saving from two places at once.** If your phone and Claude save at the same moment, the second one reads the list again and redoes just its own change, so neither is lost. A file that isn't a Next Ctrl list is never written over.
 
 ## x0.0.1 — 2026-11-07
 

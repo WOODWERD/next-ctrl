@@ -1,7 +1,7 @@
 {
-  "name": "TODAY",
-  "short_name": "Today",
-  "description": "What has to get done today, and tomorrow. Your list stays in your own private GitHub repo.",
+  "name": "Next Ctrl",
+  "short_name": "Next Ctrl",
+  "description": "What to work on next, today and tomorrow. Your list stays in your own private GitHub repo.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

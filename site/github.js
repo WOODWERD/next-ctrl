@@ -15,7 +15,7 @@ export function explain(status, repo) {
   if (status === 401) return { kind: 'auth', text: `GitHub turned the token down. It may have expired. Make a new one for ${repo} with Contents read and write, and connect again.` };
   if (status === 403) return { kind: 'rights', text: `The token can't change ${repo}. Give it Contents read and write for this repo.` };
   if (status === 404) return { kind: 'missing', text: `There's no repo ${repo} that this token can see. Check the name, and that the token covers this repo.` };
-  if (status === 'public') return { kind: 'public', text: `${repo} is public, so anyone could read your list. TODAY only uses a private repo. On GitHub, open the repo's Settings, then General, and under Danger Zone make it private.` };
+  if (status === 'public') return { kind: 'public', text: `${repo} is public, so anyone could read your list. Next Ctrl only uses a private repo. On GitHub, open the repo's Settings, then General, and under Danger Zone make it private.` };
   if (status === 'readonly') return { kind: 'rights', text: `The token can read ${repo} but not change it. Give it Contents read and write.` };
   return { kind: 'other', text: `GitHub answered ${status}. Nothing was lost; it will try again.` };
 }

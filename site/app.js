@@ -1,4 +1,4 @@
-// TODAY app: the screens from the Gate B canvas, TD-S01 to S04 (build steps B4 and B5).
+// Next Ctrl app: the screens from the Gate B canvas, TD-S01 to S04 (build steps B4 and B5).
 // Lists come from the record core; every edit is a change saved through the store,
 // queued on this device first so it works offline (TD-R34).
 import * as C from './core.js';
@@ -198,13 +198,13 @@ ${connectErr ? `<div class="strip fault" role="alert"><p>${esc(connectErr)}</p><
 <button class="key primary" type="submit"${connecting ? ' disabled' : ''}>${connecting ? 'Checking…' : 'Connect'}</button>
 </form>
 <a class="back" href="${GUIDE}">How to make the repo and token</a>
-<div class="strip"><p><b>To add by voice from Claude:</b> connect GitHub in Claude's settings on a computer or claude.ai, give it this repo, and install the TODAY skill. Then say "/today" and the thing, from any chat.</p></div>
+<div class="strip"><p><b>To add by voice from Claude:</b> connect GitHub in Claude's settings on a computer or claude.ai, give it this repo, and install the Next Ctrl skill. Then say "/today" and the thing, from any chat.</p></div>
 </section>`;
 }
 
 async function connect(repo, token) {
   repo = repo.trim().replace(/^https:\/\/github\.com\//, '').replace(/\/$/, '');
-  if (!REPO_RE.test(repo)) { connectErr = 'Give the repo as owner/name, like yourname/Today-RECORD.'; render(); return; }
+  if (!REPO_RE.test(repo)) { connectErr = 'Give the repo as owner/name, like yourname/Next-Ctrl-RECORD.'; render(); return; }
   connectErr = ''; connecting = true; render();
   document.getElementById('c-repo').value = repo;
   const s = githubStore(repo, token.trim(), ghFetch);

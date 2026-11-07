@@ -74,7 +74,7 @@ export async function checkPrivate(repo, run = gh) {
     if (statusOf(err) === 404) throw new RecordError(`Can't find ${repo}, or this computer's GitHub sign-in can't see it.`);
     throw err;
   }
-  if (!info.private) throw new RecordError(`${repo} is public. TODAY only writes to a private repo.`);
+  if (!info.private) throw new RecordError(`${repo} is public. Next Ctrl only writes to a private repo.`);
 }
 
 /* ---------- config ---------- */
@@ -184,13 +184,13 @@ async function main() {
   const argv = process.argv.slice(2);
   if (argv[0] === 'setup') {
     const repo = argv[1];
-    if (!REPO_RE.test(repo || '')) throw new RecordError('Give the repo as owner/name, like yourname/Today-RECORD');
+    if (!REPO_RE.test(repo || '')) throw new RecordError('Give the repo as owner/name, like yourname/Next-Ctrl-RECORD');
     await checkPrivate(repo);
     saveRepo(repo);
-    return `TODAY is set up on this computer: ${repo}.`;
+    return `Next Ctrl is set up on this computer: ${repo}.`;
   }
   const repo = readRepo();
-  if (!repo) return "TODAY isn't set up here. Tell me your record repo, like yourname/Today-RECORD.";
+  if (!repo) return "Next Ctrl isn't set up here. Tell me your record repo, like yourname/Next-Ctrl-RECORD.";
   if (argv[0] !== 'list' && argv[0] !== undefined) await checkPrivate(repo);
   return run(argv, { store: githubStore(repo), repo });
 }
@@ -200,7 +200,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     if (err instanceof RecordError || err instanceof ConflictError) { console.log(err.message); process.exit(2); }
     const s = statusOf(err);
     if (s === 401 || s === 403) console.log("GitHub turned this computer's sign-in down. Run: gh auth login");
-    else console.log(`Couldn't reach your TODAY repo, so nothing was changed. (${(err.stderr || err.message || '').trim().split('\n')[0]})`);
+    else console.log(`Couldn't reach your Next Ctrl repo, so nothing was changed. (${(err.stderr || err.message || '').trim().split('\n')[0]})`);
     process.exit(1);
   });
 }

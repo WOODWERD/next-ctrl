@@ -70,7 +70,7 @@ details.alltools[open]>summary::after{content:"▴";color:var(--accent-text)}
 .maker .ghlink{display:inline-flex;line-height:1.5;margin-left:auto}
 .lnk{background:none;border:0;padding:0 3px;color:inherit;font:inherit;text-decoration:underline;text-decoration-color:var(--strong);text-underline-offset:3px;cursor:pointer;min-height:34px}
 
-/* ---------- TODAY (Gate B, spec 7A) ---------- */
+/* ---------- Next Ctrl (Gate B, spec 7A) ---------- */
 .app{display:flex;flex-direction:column;gap:21px;min-height:240px}
 .lists{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:21px;align-items:start}
 

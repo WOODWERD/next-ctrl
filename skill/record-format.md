@@ -1,4 +1,4 @@
-# TODAY record format
+# Next Ctrl record format
 
 `items.json` at the top of the person's private repo. Version 1.
 
