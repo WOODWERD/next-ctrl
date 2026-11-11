@@ -1,5 +1,12 @@
 # DT — Dell Technologies design system
 
+> **Scope / ownership.** "DT" = **Dell Technologies**. This is a standalone,
+> Dell-themed design system kept in the `next-ctrl` (Today) repo as an
+> exploration — it is **not** part of the WOODWERD Today app, which keeps its
+> own WOODWERD look. Nothing here is wired into the app. See the color note
+> below: the palette is grounded on public Dell values and must be reconciled
+> against Dell Brand Central before any external or production use.
+
 **Smart to simple.** DT starts from engineered precision and reduces to calm
 clarity. Blue is the ground — Dell's own blue — read as focused, trustworthy,
 quiet. One bright sky accent supplies the *clear design-level accent*: used once
