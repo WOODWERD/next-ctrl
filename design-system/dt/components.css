@@ -1,0 +1,94 @@
+/* ============================================================
+   DT — Dell Technologies design system · base components
+   Built entirely on the semantic tokens in tokens.css.
+   Class prefix: .dt-  · Import order:  tokens.css → components.css
+   ============================================================ */
+
+@import "./tokens.css";
+
+.dt-root {
+  background:var(--dt-bg);
+  color:var(--dt-text);
+  font-family:var(--dt-font-sans);
+  font-size:var(--dt-text-md);
+  line-height:var(--dt-leading-body);
+  -webkit-font-smoothing:antialiased;
+}
+
+/* ── Type helpers ───────────────────────────────────────── */
+.dt-eyebrow {
+  font-family:var(--dt-font-mono);
+  font-size:var(--dt-text-xs);
+  letter-spacing:var(--dt-tracking-label);
+  text-transform:uppercase;
+  color:var(--dt-accent);
+}
+.dt-display {
+  font-weight:var(--dt-weight-bold);
+  font-size:var(--dt-text-3xl);
+  line-height:var(--dt-leading-tight);
+  letter-spacing:var(--dt-tracking-tight);
+  text-wrap:balance;
+  margin:0;
+}
+.dt-title { font-weight:var(--dt-weight-bold); font-size:var(--dt-text-xl); letter-spacing:var(--dt-tracking-tight); margin:0; }
+.dt-muted { color:var(--dt-text-muted); }
+.dt-mono  { font-family:var(--dt-font-mono); }
+
+/* ── Button ─────────────────────────────────────────────── */
+.dt-btn {
+  --_bg:var(--dt-bg-raised); --_fg:var(--dt-text); --_bd:var(--dt-line-strong);
+  display:inline-flex; align-items:center; justify-content:center; gap:var(--dt-2);
+  font-family:var(--dt-font-sans); font-size:var(--dt-text-sm); font-weight:var(--dt-weight-medium);
+  padding:10px 16px; border-radius:var(--dt-radius-md);
+  background:var(--_bg); color:var(--_fg); border:1px solid var(--_bd);
+  cursor:pointer; transition:transform var(--dt-fast) var(--dt-ease),
+             background var(--dt-fast) var(--dt-ease), box-shadow var(--dt-fast) var(--dt-ease);
+}
+.dt-btn:hover { box-shadow:var(--dt-shadow-1); }
+.dt-btn:active { transform:translateY(1px); }
+.dt-btn:focus-visible { outline:none; box-shadow:var(--dt-shadow-focus); }
+.dt-btn--primary { --_bg:var(--dt-primary); --_fg:var(--dt-text-on-blue); --_bd:transparent; }
+.dt-btn--primary:hover { background:var(--dt-primary-press); }
+/* The accent is a highlight, not a default — reserve for one clear moment per view. */
+.dt-btn--accent  { --_bg:var(--dt-accent); --_fg:var(--dt-navy-900); --_bd:transparent; }
+.dt-btn--accent:hover { background:var(--dt-accent-press); }
+.dt-btn--ghost   { --_bg:transparent; --_fg:var(--dt-text-muted); --_bd:transparent; }
+
+/* ── Input ──────────────────────────────────────────────── */
+.dt-input {
+  width:100%; font-family:var(--dt-font-sans); font-size:var(--dt-text-md); color:var(--dt-text);
+  background:var(--dt-bg-raised); border:1px solid var(--dt-line);
+  border-radius:var(--dt-radius-md); padding:11px 13px; outline:none;
+  transition:border-color var(--dt-fast) var(--dt-ease), box-shadow var(--dt-fast) var(--dt-ease);
+}
+.dt-input::placeholder { color:var(--dt-text-faint); }
+.dt-input:focus { border-color:var(--dt-accent); box-shadow:var(--dt-shadow-focus); }
+
+/* ── Chip / tag ─────────────────────────────────────────── */
+.dt-chip {
+  display:inline-flex; align-items:center; gap:6px;
+  font-family:var(--dt-font-mono); font-size:var(--dt-text-xs); letter-spacing:0.04em;
+  padding:4px 10px; border-radius:var(--dt-radius-pill);
+  background:var(--dt-bg-sunken); color:var(--dt-text-muted); border:1px solid var(--dt-line);
+}
+.dt-chip--blue   { background:var(--dt-blue-100); color:var(--dt-blue-700); border-color:transparent; }
+.dt-chip--accent { background:var(--dt-sky-200); color:var(--dt-sky-600); border-color:transparent; }
+
+/* ── Card ───────────────────────────────────────────────── */
+.dt-card {
+  background:var(--dt-bg-raised); border:1px solid var(--dt-line);
+  border-radius:var(--dt-radius-lg); padding:var(--dt-5); box-shadow:var(--dt-shadow-1);
+}
+
+/* ── Status dot (semantic, not accent) ──────────────────── */
+.dt-status { display:inline-flex; align-items:center; gap:7px; font-size:var(--dt-text-sm); color:var(--dt-text-muted); }
+.dt-status::before { content:""; width:8px; height:8px; border-radius:var(--dt-radius-pill); background:var(--dt-slate-400); }
+.dt-status--good::before { background:var(--dt-good); }
+.dt-status--warn::before { background:var(--dt-warn); }
+.dt-status--crit::before { background:var(--dt-crit); }
+
+/* Respect reduced-motion globally for anything using DT transitions. */
+@media (prefers-reduced-motion: reduce) {
+  .dt-btn, .dt-input { transition:none; }
+}

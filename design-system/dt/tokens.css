@@ -1,0 +1,154 @@
+/* ============================================================
+   DT — Dell Technologies design system · tokens
+   "Smart to simple." Dell-blue ground, one bright sky accent.
+   Dependency-free: system font stacks only (no commercial faces).
+
+   NOTE ON COLOR: grounded on the widely-published Dell Blue
+   #0076CE and a midnight navy. Dell's own current values live in
+   Brand Central (DDS 2.0 lists #0672CB / #002A58); reconcile these
+   against it before any external/production use.
+
+   Consume via  @import './tokens.css';  then style through the
+   semantic --dt-* tokens, never the raw primitives.
+   ============================================================ */
+
+:root {
+  /* ── Primitives: blue-biased neutrals ───────────────────── */
+  --dt-navy-900:#002A58;   /* Dell midnight — ink / dark ground */
+  --dt-navy-800:#003A6B;
+  --dt-navy-700:#00447C;
+  --dt-slate-600:#3A4E6B;
+  --dt-slate-500:#56688A;  /* muted body text          */
+  --dt-slate-400:#8191A8;
+  --dt-slate-300:#ADB9CC;
+  --dt-mist-200:#D7E2F1;   /* borders / hairlines      */
+  --dt-mist-100:#E8EFF8;   /* soft fills               */
+  --dt-paper:#F3F7FC;      /* app canvas (blue-tinted) */
+  --dt-surface:#FFFFFF;    /* raised surface           */
+
+  /* ── Primitives: Dell blue ──────────────────────────────── */
+  --dt-blue-700:#005BA1;   /* primary pressed          */
+  --dt-blue-600:#0076CE;   /* Dell Blue — primary      */
+  --dt-blue-500:#2A8FDA;
+  --dt-blue-200:#B8DDF5;
+  --dt-blue-100:#E3F1FB;
+
+  /* ── Primitives: sky — the clear design-level accent ────── */
+  --dt-sky-600:#0098D4;
+  --dt-sky-500:#00B7E4;    /* accent pop               */
+  --dt-sky-200:#AEE6F7;
+
+  /* ── Primitives: signal (semantic, distinct from accent) ── */
+  --dt-good:#1C8E5A;
+  --dt-warn:#C8880A;
+  --dt-crit:#D23B3B;
+
+  /* ── Semantic: surfaces & text ──────────────────────────── */
+  --dt-bg:var(--dt-paper);
+  --dt-bg-raised:var(--dt-surface);
+  --dt-bg-sunken:var(--dt-mist-100);
+  --dt-line:var(--dt-mist-200);
+  --dt-line-strong:var(--dt-slate-300);
+
+  --dt-text:var(--dt-navy-900);
+  --dt-text-muted:var(--dt-slate-500);
+  --dt-text-faint:var(--dt-slate-400);
+  --dt-text-on-blue:#FFFFFF;
+
+  /* ── Semantic: interaction ──────────────────────────────── */
+  --dt-primary:var(--dt-blue-600);
+  --dt-primary-press:var(--dt-blue-700);
+  --dt-accent:var(--dt-sky-500);
+  --dt-accent-press:var(--dt-sky-600);
+  --dt-focus:var(--dt-sky-500);
+
+  /* ── Type ───────────────────────────────────────────────── */
+  --dt-font-sans: "Inter var", "Inter", system-ui, -apple-system,
+                  "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --dt-font-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Menlo",
+                  "Consolas", monospace;
+
+  /* modular scale ~1.25 */
+  --dt-text-xs:11px;
+  --dt-text-sm:13px;
+  --dt-text-md:15px;   /* body base */
+  --dt-text-lg:19px;
+  --dt-text-xl:24px;
+  --dt-text-2xl:31px;
+  --dt-text-3xl:44px;
+  --dt-text-4xl:62px;
+
+  --dt-tracking-tight:-0.02em;
+  --dt-tracking-label:0.14em;   /* mono eyebrows / labels */
+
+  --dt-weight-body:400;
+  --dt-weight-medium:500;
+  --dt-weight-bold:700;
+  --dt-leading-tight:1.08;
+  --dt-leading-body:1.55;
+
+  /* ── Space (4px base) ───────────────────────────────────── */
+  --dt-1:4px;  --dt-2:8px;  --dt-3:12px; --dt-4:16px;
+  --dt-5:24px; --dt-6:32px; --dt-7:48px; --dt-8:64px; --dt-9:96px;
+
+  /* ── Radius: crisp, near-sharp (smart-to-simple) ────────── */
+  --dt-radius-sm:3px;
+  --dt-radius-md:6px;
+  --dt-radius-lg:10px;
+  --dt-radius-pill:9999px;
+
+  /* ── Elevation: blue-tinted, restrained ─────────────────── */
+  --dt-shadow-1:0 1px 2px rgba(0,42,88,0.07),
+                0 1px 3px rgba(0,42,88,0.05);
+  --dt-shadow-2:0 2px 6px rgba(0,42,88,0.10),
+                0 8px 24px rgba(0,42,88,0.08);
+  --dt-shadow-focus:0 0 0 3px rgba(0,183,228,0.38);
+
+  /* ── Motion ─────────────────────────────────────────────── */
+  --dt-ease:cubic-bezier(0.22,0.61,0.36,1);
+  --dt-fast:120ms;
+  --dt-med:220ms;
+}
+
+/* ── Dark theme: same tokens, re-grounded on Dell midnight ── */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --dt-bg:#041B3A;
+    --dt-bg-raised:var(--dt-navy-800);
+    --dt-bg-sunken:#002A58;
+    --dt-line:#1C3357;
+    --dt-line-strong:#2E4A74;
+
+    --dt-text:#E8EFF8;
+    --dt-text-muted:#98A8C2;
+    --dt-text-faint:#6B7D9A;
+
+    --dt-primary:var(--dt-blue-500);
+    --dt-primary-press:var(--dt-blue-600);
+    --dt-accent:var(--dt-sky-500);
+    --dt-accent-press:var(--dt-sky-200);
+
+    --dt-shadow-1:0 1px 2px rgba(0,0,0,0.45);
+    --dt-shadow-2:0 6px 24px rgba(0,0,0,0.55);
+  }
+}
+
+/* Explicit theme toggles win over the media query, both directions. */
+:root[data-theme="light"] {
+  --dt-bg:var(--dt-paper); --dt-bg-raised:var(--dt-surface); --dt-bg-sunken:var(--dt-mist-100);
+  --dt-line:var(--dt-mist-200); --dt-line-strong:var(--dt-slate-300);
+  --dt-text:var(--dt-navy-900); --dt-text-muted:var(--dt-slate-500); --dt-text-faint:var(--dt-slate-400);
+  --dt-primary:var(--dt-blue-600); --dt-primary-press:var(--dt-blue-700);
+  --dt-accent:var(--dt-sky-500); --dt-accent-press:var(--dt-sky-600);
+  --dt-shadow-1:0 1px 2px rgba(0,42,88,0.07),0 1px 3px rgba(0,42,88,0.05);
+  --dt-shadow-2:0 2px 6px rgba(0,42,88,0.10),0 8px 24px rgba(0,42,88,0.08);
+}
+:root[data-theme="dark"] {
+  --dt-bg:#041B3A; --dt-bg-raised:var(--dt-navy-800); --dt-bg-sunken:#002A58;
+  --dt-line:#1C3357; --dt-line-strong:#2E4A74;
+  --dt-text:#E8EFF8; --dt-text-muted:#98A8C2; --dt-text-faint:#6B7D9A;
+  --dt-primary:var(--dt-blue-500); --dt-primary-press:var(--dt-blue-600);
+  --dt-accent:var(--dt-sky-500); --dt-accent-press:var(--dt-sky-200);
+  --dt-shadow-1:0 1px 2px rgba(0,0,0,0.45);
+  --dt-shadow-2:0 6px 24px rgba(0,0,0,0.55);
+}
